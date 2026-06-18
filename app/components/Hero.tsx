@@ -2,7 +2,17 @@
 
 import { useEffect, useState } from "react";
 
-const SLIDES = ["/hero.jpg", "/hero.jpg", "/hero.jpg"];
+const SLIDES = [
+  "/FlourishAssets/hero.jpg",
+  "/FlourishAssets/Asset1.jpg",
+  "/FlourishAssets/Asset2.jpg",
+  "/FlourishAssets/Asset3.jpg",
+  "/FlourishAssets/Asset4.jpg",
+  "/FlourishAssets/Asset5.jpg",
+  "/FlourishAssets/Asset6.jpg",
+  "/FlourishAssets/Asset7.jpg",
+  "/FlourishAssets/Asset8.jpg",
+];
 const HERO_OVERLAY = 0.55;
 
 function overlayGradient(ov: number) {
@@ -15,10 +25,10 @@ export default function Hero() {
   useEffect(() => {
     const timer = setInterval(
       () => setSlide((s) => (s + 1) % SLIDES.length),
-      5000
+      4000
     );
     return () => clearInterval(timer);
-  }, [slide]);
+  }, []);
 
   const goTo = (i: number) => setSlide(i);
 
@@ -47,7 +57,7 @@ export default function Hero() {
         style={{ background: overlayGradient(HERO_OVERLAY) }}
       />
 
-      <div className="relative z-[6] mx-auto flex w-full max-w-[1180px] flex-col items-start gap-[22px] self-end px-[clamp(24px,6vw,96px)] pb-[clamp(56px,9vh,104px)]">
+      <div className="relative z-[6] mx-auto flex w-full max-w-[1442px] flex-col items-start gap-[22px] self-end px-[clamp(24px,6vw,96px)] pb-[clamp(56px,9vh,104px)]">
         <span className="font-display text-[13px] uppercase tracking-[0.32em] text-gold-light">
           A new book by Yaddin
         </span>

@@ -25,7 +25,11 @@ export const metadata: Metadata = {
       "A weekly practice in becoming. Read the first law free.",
     type: "website",
     url: "https://wepray2flourish.net",
-    images: ["/cover.jpg"],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "We Pray To Flourish — 52 Laws of You",
+    description: "A weekly practice in becoming. Read the first law free.",
   },
 };
 
