@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Schibsted_Grotesk, Hanken_Grotesk } from "next/font/google";
 import "./globals.css";
+import { CartProvider } from "./cart/CartContext";
 
 const schibsted = Schibsted_Grotesk({
   variable: "--font-schibsted",
@@ -43,7 +44,9 @@ export default function RootLayout({
       lang="en"
       className={`${schibsted.variable} ${hanken.variable} h-full antialiased`}
     >
-      <body className="min-h-full">{children}</body>
+      <body className="min-h-full">
+        <CartProvider>{children}</CartProvider>
+      </body>
     </html>
   );
 }

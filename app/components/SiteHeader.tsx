@@ -1,4 +1,5 @@
 import Image from "next/image";
+import CartButton from "./CartButton";
 
 const navLinks = [
   { href: "#book", label: "The Book" },
@@ -47,17 +48,7 @@ export default function SiteHeader() {
                 <circle cx="17.4" cy="6.6" r="1.1" fill="currentColor" stroke="none" />
               </svg>
             </a>
-            <a
-              href="#book"
-              aria-label="Cart"
-              className="inline-flex text-ink transition-colors hover:text-gold"
-            >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="9" cy="20" r="1.4" />
-                <circle cx="18" cy="20" r="1.4" />
-                <path d="M2 3h2.2l2.3 12.2a1.2 1.2 0 0 0 1.2 1h8.9a1.2 1.2 0 0 0 1.2-.95L21 7.5H5.2" />
-              </svg>
-            </a>
+            <CartButton />
           </div>
         </div>
       </nav>

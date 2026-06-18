@@ -20,6 +20,10 @@
 
 html {
   scroll-behavior: smooth;
+  /* Lock the site to a light scheme so dark-mode browsers never invert the
+     canvas to black (cream is the brand background everywhere). */
+  color-scheme: light;
+  background: var(--color-paper);
 }
 
 body {

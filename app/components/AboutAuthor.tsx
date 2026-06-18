@@ -17,11 +17,11 @@ export default function AboutAuthor() {
       <div className="mx-auto grid max-w-[1320px] grid-cols-1 items-center gap-x-[25px] gap-y-[28px] md:grid-cols-[1.2fr_1fr]">
         <div className="flex justify-center md:justify-start">
           <div
-            className="aspect-[4/5] w-full overflow-hidden rounded-[4px] bg-panel shadow-[0_40px_90px_-40px_rgba(26,23,20,0.42)]"
+            className="aspect-[4/5] w-full overflow-hidden rounded-[4px] bg-panel shadow-[0_40px_90px_-40px_rgba(26,23,20,0.42)] grayscale"
             role="img"
             aria-label="Portrait of Yaddin"
             style={{
-              backgroundImage: "url('/author.jpg')",
+              backgroundImage: "url('/AuthorPicture.jpg')",
               backgroundSize: "cover",
               backgroundPosition: "center",
             }}

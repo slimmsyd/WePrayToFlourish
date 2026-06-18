@@ -1,3 +1,6 @@
+import AddToCartButton from "./AddToCartButton";
+import BookHoverMedia from "./BookHoverMedia";
+
 export default function AboutBook() {
   return (
     <section
@@ -6,14 +9,7 @@ export default function AboutBook() {
     >
       <div className="mx-auto grid max-w-[1320px] grid-cols-1 items-center gap-x-[25px] gap-y-[28px] md:grid-cols-[1.3fr_1fr]">
         <div className="flex justify-center md:justify-start">
-          <div
-            className="relative aspect-[1/1.18] w-full overflow-hidden rounded-[4px] shadow-[0_40px_90px_-36px_rgba(26,23,20,0.5),0_4px_14px_-6px_rgba(26,23,20,0.3)]"
-            style={{
-              backgroundImage: "url('/cover.jpg')",
-              backgroundSize: "cover",
-              backgroundPosition: "center",
-            }}
-          />
+          <BookHoverMedia />
         </div>
 
         <div className="flex max-w-[400px] flex-col items-start">
@@ -53,13 +49,8 @@ export default function AboutBook() {
             </p>
           </div>
 
-          {/* Filled pill button */}
-          <a
-            href="#chapter"
-            className="mt-[26px] inline-flex items-center justify-center rounded-full bg-[#6a6056] px-[40px] py-[13px] text-[13px] font-medium tracking-[0.04em] text-paper transition-colors hover:bg-ink-soft"
-          >
-            Read the first law
-          </a>
+          {/* Filled pill button — adds the book to the cart */}
+          <AddToCartButton />
 
           {/* Meta tags */}
           <div className="mt-[22px] flex flex-wrap gap-x-[16px] gap-y-[6px] text-[11px] text-ink/40">
