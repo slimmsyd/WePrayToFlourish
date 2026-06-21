@@ -1,8 +1,11 @@
-import type { ProductContent } from "@/lib/content";
+import { getSiteContent } from "@/lib/content";
 import AddToCartButton from "./AddToCartButton";
 import BookHoverMedia from "./BookHoverMedia";
 
-export default function AboutBook({ product }: { product: ProductContent }) {
+export default async function AboutBook() {
+  const site = await getSiteContent();
+  const product = site.product;
+  const { eyebrow, headline, metaLine, ctaLabel } = site.copy.aboutBook;
   return (
     <section
       id="book"
@@ -21,7 +24,7 @@ export default function AboutBook({ product }: { product: ProductContent }) {
           {/* Label + tag */}
           <div className="flex items-center gap-[10px]">
             <span className="font-display text-[12px] font-medium text-muted">
-              The book
+              {eyebrow}
             </span>
             <span className="inline-flex items-center bg-ink px-[8px] py-[5px] font-display text-[12px] font-medium leading-none text-paper">
               {product.tagline}
@@ -30,12 +33,12 @@ export default function AboutBook({ product }: { product: ProductContent }) {
 
           {/* Title */}
           <h2 className="mt-[14px] m-0 font-display text-[15px] font-semibold leading-[1.35] tracking-[-0.01em] text-ink">
-            Fifty-two laws. One year of becoming.
+            {headline}
           </h2>
 
           {/* Meta sub-line */}
           <span className="mt-[7px] text-[11px] text-ink/40">
-            A weekly practice &middot; 52 chapters
+            {metaLine}
           </span>
 
           {/* Hairline rule */}
@@ -54,7 +57,7 @@ export default function AboutBook({ product }: { product: ProductContent }) {
           </div>
 
           {/* Filled pill button — adds the book to the cart */}
-          <AddToCartButton />
+          <AddToCartButton label={ctaLabel} />
 
           {/* Meta tags */}
           <div className="mt-[22px] flex flex-wrap gap-x-[16px] gap-y-[6px] text-[11px] text-ink/40">

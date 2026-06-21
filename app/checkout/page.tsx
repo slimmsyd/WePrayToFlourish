@@ -1,13 +1,15 @@
 import type { Metadata } from "next";
-import { getProductContent } from "@/lib/content";
+import { getSiteContent } from "@/lib/content";
 import Checkout from "./Checkout";
 
-export const metadata: Metadata = {
-  title: "Checkout — 52 Laws of You",
-  description: "Complete your order for 52 Laws of You by Yaddin.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const { product } = await getSiteContent();
+  return {
+    title: `Checkout — ${product.title}`,
+    description: `Complete your order for ${product.title} by ${product.author}.`,
+  };
+}
 
-export default async function CheckoutPage() {
-  const product = await getProductContent();
-  return <Checkout product={product} />;
+export default function CheckoutPage() {
+  return <Checkout />;
 }
