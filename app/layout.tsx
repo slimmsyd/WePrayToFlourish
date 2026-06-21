@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Schibsted_Grotesk, Hanken_Grotesk } from "next/font/google";
 import "./globals.css";
 import { CartProvider } from "./cart/CartContext";
+import { SiteContentProvider } from "@/lib/site-content";
+import { getSiteContent } from "@/lib/content";
 
 const schibsted = Schibsted_Grotesk({
   variable: "--font-schibsted",
@@ -15,37 +17,43 @@ const hanken = Hanken_Grotesk({
   weight: ["300", "400", "500", "600"],
 });
 
-export const metadata: Metadata = {
-  metadataBase: new URL("https://wepray2flourish.net"),
-  title: "We Pray To Flourish — 52 Laws of You by Yaddin",
-  description:
-    "52 Laws of You is a year-long practice in becoming, for anyone learning to speak less, notice more, and flourish. A new book by Yaddin.",
-  openGraph: {
-    title: "We Pray To Flourish — 52 Laws of You",
-    description:
-      "A weekly practice in becoming. Read the first law free.",
-    type: "website",
-    url: "https://wepray2flourish.net",
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "We Pray To Flourish — 52 Laws of You",
-    description: "A weekly practice in becoming. Read the first law free.",
-  },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const site = await getSiteContent();
+  const siteUrl =
+    process.env.NEXT_PUBLIC_SITE_URL ?? `https://${site.brand.domain}`;
+  return {
+    metadataBase: new URL(siteUrl),
+    title: site.seo.title,
+    description: site.seo.description,
+    openGraph: {
+      title: site.seo.ogTitle,
+      description: site.seo.ogDescription,
+      type: "website",
+      url: siteUrl,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: site.seo.ogTitle,
+      description: site.seo.ogDescription,
+    },
+  };
+}
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const site = await getSiteContent();
   return (
     <html
       lang="en"
       className={`${schibsted.variable} ${hanken.variable} h-full antialiased`}
     >
       <body className="min-h-full">
-        <CartProvider>{children}</CartProvider>
+        <SiteContentProvider content={site}>
+          <CartProvider>{children}</CartProvider>
+        </SiteContentProvider>
       </body>
     </html>
   );

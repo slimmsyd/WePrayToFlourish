@@ -12,7 +12,10 @@ import type { Appearance } from "@stripe/stripe-js";
 import { useCart } from "../cart/CartContext";
 import { getStripe } from "@/lib/stripe-client";
 import { priceFor, pricingFrom } from "@/lib/pricing";
-import type { ProductContent } from "@/lib/content";
+import { useSiteContent } from "@/lib/site-content";
+import type { ProductContent, SiteContent } from "@/lib/content";
+
+type CheckoutCopy = SiteContent["copy"]["checkout"];
 
 const fmt = (n: number) => "$" + n.toFixed(2);
 
@@ -49,7 +52,9 @@ const appearance: Appearance = {
 
 const stripePromise = getStripe();
 
-export default function Checkout({ product }: { product: ProductContent }) {
+export default function Checkout() {
+  const site = useSiteContent();
+  const product = site.product;
   const { qty } = useCart();
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [paymentIntentId, setPaymentIntentId] = useState<string | null>(null);
@@ -123,7 +128,11 @@ export default function Checkout({ product }: { product: ProductContent }) {
         </div>
       ) : (
         <Elements stripe={stripePromise} options={{ clientSecret, appearance }}>
-          <CheckoutBody paymentIntentId={paymentIntentId!} product={product} />
+          <CheckoutBody
+            paymentIntentId={paymentIntentId!}
+            product={product}
+            checkout={site.copy.checkout}
+          />
         </Elements>
       )}
     </div>
@@ -133,9 +142,11 @@ export default function Checkout({ product }: { product: ProductContent }) {
 function CheckoutBody({
   paymentIntentId,
   product,
+  checkout,
 }: {
   paymentIntentId: string;
   product: ProductContent;
+  checkout: CheckoutCopy;
 }) {
   const stripe = useStripe();
   const elements = useElements();
@@ -364,12 +375,10 @@ function CheckoutBody({
             </svg>
           </div>
           <h2 className="m-0 font-display text-[clamp(28px,3.4vw,42px)] font-normal leading-[1.05] tracking-[-0.02em]">
-            Thank you. Your order is in.
+            {checkout.successTitle}
           </h2>
           <p className="m-0 max-w-[46ch] text-[17px] font-light leading-[1.65] text-ink-soft">
-            A confirmation is on its way to your inbox. {product.title} will ship
-            shortly, and your free first chapter is included as a digital
-            download.
+            {checkout.successBody}
           </p>
           <Link
             href="/"
@@ -400,7 +409,7 @@ function CheckoutBody({
               {product.format} &middot; by {product.author}
             </span>
             <span className="text-[13px] text-ink-soft">
-              Includes free first chapter
+              {checkout.summaryItemNote}
             </span>
           </div>
         </div>

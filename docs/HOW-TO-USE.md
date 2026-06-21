@@ -60,21 +60,31 @@ npm run dev      # http://localhost:3000
 Open **`/admin/login`**, sign in with your `ADMIN_PASSWORD`.
 
 - **Dashboard** (`/admin`) — overview + links.
-- **Product & pricing** (`/admin/product`) — edit the title, author, format,
-  tagline, **price / shipping / free-ship threshold / tax / currency / max qty**
-  (enter prices in dollars; stored as cents), cover image + hover video (pick a
-  file already in `/public` or paste a URL), short + long description, and tags.
-  Click **Save changes** — it publishes live immediately. The price you set here
-  is exactly what Stripe charges.
+- **Content** (`/admin/content`) — edit the **entire site** from one screen.
+  Every field is grouped by section (Brand, Product, Hero, Quote, About Book,
+  About Author, Free Chapter, Community, Checkout, Nav/Footer/Social, SEO):
+  - Text/headings/paragraphs → text boxes; long text → textareas.
+  - Prices (anything labelled `($)`) are entered in **dollars** and stored as
+    cents. The price you set is exactly what Stripe charges.
+  - Images/videos (cover, logo, hero slides, author photo) → type a path or pick
+    a file already in `/public` from the dropdown.
+  - Lists (nav links, hero slides, songs, tags, community photos) → **+ Add** /
+    **Remove** rows.
+  Click **Save changes** — it publishes live immediately.
 - **Orders** (`/admin/orders`) — read-only list of paid orders (customer,
   address, qty, total, status, date), newest first.
 - **Log out** — top-right.
 
 ### How content flows
-- Product content lives as one JSONB row in the `site_content` table.
-- The public site (`/`, `/checkout`) and the Stripe charge route all read from
-  it. Pricing is **always computed server-side** — the browser can never dictate
-  the amount.
+- The whole site's content lives as one JSONB row in the `site_content` table.
+- `site.config.ts` is the default/seed; the database holds your edits, merged
+  over those defaults. With no edits yet, the site shows the `site.config.ts`
+  values.
+- The public site (`/`, `/checkout`) and the Stripe charge route read from it.
+  Pricing is **always computed server-side** — the browser can never dictate the
+  amount.
+- The editor is **schema-driven**: it renders whatever shape `site.config.ts`
+  has, so it adapts automatically if you add or rename fields.
 - Saving calls `revalidatePath` so the static pages refresh.
 
 ---

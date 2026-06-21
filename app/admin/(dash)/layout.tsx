@@ -24,8 +24,8 @@ export default async function DashLayout({
               Flourish Admin
             </Link>
             <nav className="flex items-center gap-[20px] font-display text-[13px] tracking-[0.02em]">
-              <Link href="/admin/product" className="text-ink-soft transition-colors hover:text-gold">
-                Product
+              <Link href="/admin/content" className="text-ink-soft transition-colors hover:text-gold">
+                Content
               </Link>
               <Link href="/admin/orders" className="text-ink-soft transition-colors hover:text-gold">
                 Orders

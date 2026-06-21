@@ -21,13 +21,13 @@ export default async function AdminDashboard() {
           Dashboard
         </span>
         <h1 className="m-0 font-display text-[clamp(26px,3.4vw,40px)] font-normal leading-[1.05] tracking-[-0.02em]">
-          Manage your store
+          Manage your site
         </h1>
       </div>
 
       <div className="grid grid-cols-1 gap-[18px] sm:grid-cols-2">
-        <Link href="/admin/product" className={cardClass}>
-          <span className="font-display text-[19px] tracking-[-0.01em]">Product &amp; pricing</span>
+        <Link href="/admin/content" className={cardClass}>
+          <span className="font-display text-[19px] tracking-[-0.01em]">Content &amp; pricing</span>
           <span className="text-[14px] text-ink-soft">
             {product.title} · ${(product.priceCents / 100).toFixed(2)}
           </span>
