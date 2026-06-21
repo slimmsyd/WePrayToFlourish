@@ -18,11 +18,20 @@ export default async function Community() {
         </div>
 
         <div className="grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-[clamp(16px,2.4vw,28px)]">
-          {photos.map((photo) => (
-            <figure key={photo.caption} className="m-0 flex flex-col gap-3">
-              <div className="flex aspect-[4/3] w-full items-center justify-center rounded-[3px] bg-paper text-[12px] uppercase tracking-[0.2em] text-muted">
-                Drop a photo
-              </div>
+          {photos.map((photo, i) => (
+            <figure key={i} className="m-0 flex flex-col gap-3">
+              {photo.image ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={photo.image}
+                  alt={photo.caption}
+                  className="aspect-[4/3] w-full rounded-[3px] object-cover"
+                />
+              ) : (
+                <div className="flex aspect-[4/3] w-full items-center justify-center rounded-[3px] bg-paper text-[12px] uppercase tracking-[0.2em] text-muted">
+                  Drop a photo
+                </div>
+              )}
               <figcaption className="text-[14px] font-light tracking-[0.02em] text-ink-soft">
                 {photo.caption}
               </figcaption>

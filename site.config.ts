@@ -96,7 +96,7 @@ export type SiteConfig = {
       eyebrow: string;
       headline: string;
       body: string;
-      photos: { caption: string }[];
+      photos: { caption: string; image: string }[];
     };
     checkout: {
       summaryItemNote: string;
@@ -230,9 +230,9 @@ export const site: SiteConfig = {
       headline: "The work beyond the page.",
       body: "Yaddin gives his time to the communities that shaped him: feeding programs, youth mentorship, and the quiet labor of simply showing up.",
       photos: [
-        { caption: "Community gathering" },
-        { caption: "Service day" },
-        { caption: "Youth program" },
+        { caption: "Community gathering", image: "" },
+        { caption: "Service day", image: "" },
+        { caption: "Youth program", image: "" },
       ],
     },
     checkout: {
