@@ -19,7 +19,7 @@ function overlayGradient(ov: number) {
   return `linear-gradient(180deg, rgba(10,9,16,${(ov * 0.72).toFixed(3)}) 0%, rgba(10,9,16,${(ov * 0.12).toFixed(3)}) 36%, rgba(10,9,16,${(ov * 0.28).toFixed(3)}) 60%, rgba(10,9,16,${Math.min(ov + 0.28, 0.96).toFixed(3)}) 100%)`;
 }
 
-export default function Hero() {
+export default function Hero({ byline, sub }: { byline: string; sub: string }) {
   const [slide, setSlide] = useState(0);
 
   useEffect(() => {
@@ -59,7 +59,7 @@ export default function Hero() {
 
       <div className="relative z-[6] mx-auto flex w-full max-w-[1442px] flex-col items-start gap-[22px] self-end px-[clamp(24px,6vw,96px)] pb-[clamp(56px,9vh,104px)]">
         <span className="font-display text-[13px] uppercase tracking-[0.32em] text-gold-light">
-          A new book by Yaddin
+          {byline}
         </span>
         <h1 className="m-0 font-display text-[clamp(46px,8.4vw,116px)] font-normal leading-[0.94] tracking-[-0.025em] text-balance text-paper">
           We&nbsp;Pray
@@ -67,8 +67,7 @@ export default function Hero() {
           To&nbsp;Flourish
         </h1>
         <p className="m-0 max-w-[48ch] text-[clamp(16px,1.5vw,20px)] font-light leading-[1.6] text-paper/[0.86]">
-          52 Laws of You is the book Yaddin has ushered in: a weekly practice in
-          becoming, for anyone learning to speak less, notice more, and flourish.
+          {sub}
         </p>
         <div className="mt-2 flex flex-wrap items-center gap-4">
           <a

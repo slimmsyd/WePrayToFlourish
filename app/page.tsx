@@ -7,15 +7,17 @@ import AboutAuthor from "./components/AboutAuthor";
 import FreeChapter from "./components/FreeChapter";
 import Community from "./components/Community";
 import SiteFooter from "./components/SiteFooter";
+import { getProductContent } from "@/lib/content";
 
-export default function WePrayToFlourish() {
+export default async function WePrayToFlourish() {
+  const product = await getProductContent();
   return (
     <>
       <SiteHeader />
-      <Hero />
+      <Hero byline={`A new book by ${product.author}`} sub={product.shortDescription} />
       <ArtCarousel />
       <Quote />
-      <AboutBook />
+      <AboutBook product={product} />
       <AboutAuthor />
       <FreeChapter />
       <Community />

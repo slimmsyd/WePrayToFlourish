@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { getProductContent } from "@/lib/content";
 import Checkout from "./Checkout";
 
 export const metadata: Metadata = {
@@ -6,6 +7,7 @@ export const metadata: Metadata = {
   description: "Complete your order for 52 Laws of You by Yaddin.",
 };
 
-export default function CheckoutPage() {
-  return <Checkout />;
+export default async function CheckoutPage() {
+  const product = await getProductContent();
+  return <Checkout product={product} />;
 }

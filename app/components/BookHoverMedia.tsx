@@ -8,7 +8,15 @@ import { useEffect, useRef, useState } from "react";
  * first time the book scrolls into view (so mobile / no-hover users see it),
  * and also on hover or focus — whichever happens first. Plays only once.
  */
-export default function BookHoverMedia() {
+export default function BookHoverMedia({
+  coverImage,
+  coverAlt,
+  hoverVideo,
+}: {
+  coverImage: string;
+  coverAlt: string;
+  hoverVideo: string;
+}) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const playedRef = useRef(false);
@@ -48,25 +56,27 @@ export default function BookHoverMedia() {
       onMouseEnter={start}
       onFocus={start}
       tabIndex={0}
-      aria-label="52 Laws of You, hardcover edition."
+      aria-label={coverAlt}
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        src="/book.png"
-        alt="52 Laws of You, hardcover edition"
+        src={coverImage}
+        alt={coverAlt}
         className="h-auto w-full object-contain"
       />
-      <video
-        ref={videoRef}
-        src="/book-hover.mp4"
-        muted
-        playsInline
-        preload="auto"
-        aria-hidden
-        className={`pointer-events-none absolute inset-0 h-full w-full object-contain transition-opacity duration-300 ease-out ${
-          revealed ? "opacity-100" : "opacity-0"
-        }`}
-      />
+      {hoverVideo && (
+        <video
+          ref={videoRef}
+          src={hoverVideo}
+          muted
+          playsInline
+          preload="auto"
+          aria-hidden
+          className={`pointer-events-none absolute inset-0 h-full w-full object-contain transition-opacity duration-300 ease-out ${
+            revealed ? "opacity-100" : "opacity-0"
+          }`}
+        />
+      )}
     </div>
   );
 }

@@ -1,22 +1,24 @@
 # We Pray To Flourish
 
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+Single-product book store (**52 Laws of You** by Yaddin) on Next.js 16, with
+Stripe payments, a Neon Postgres database, and an admin CRM for editing the
+product, pricing, and copy.
 
-## Getting Started
+## 📖 Full guide: [`docs/HOW-TO-USE.md`](docs/HOW-TO-USE.md)
 
-First, run the development server:
+Read that for setup (env + database), the admin CRM, taking test payments, the
+project map, and reusing this as a template.
+
+## Quick start
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+cp .env.example .env.local           # then fill in the values (see the guide)
+node --env-file=.env.local scripts/db-init.mjs   # create + seed tables
+npm run dev                          # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Admin CRM: **http://localhost:3000/admin/login** (password = your `ADMIN_PASSWORD`).
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
