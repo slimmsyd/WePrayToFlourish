@@ -1,10 +1,54 @@
 "use client";
 
-import { Fragment } from "react";
+import { Fragment, useId, useRef, useState } from "react";
 
 export type Assets = { images: string[]; videos: string[] };
 
 type Path = (string | number)[];
+
+// Image-ish fields get a live preview + drag-and-drop upload; videos keep the
+// path/picker only (encoding video as a data URL would be far too large).
+const IMAGE_KEY = /image|cover|logo|photo|slide|icon|avatar|thumb|art|banner/i;
+// "coverAlt"/"logoAlt"/"imageAlt" are alt TEXT, not image paths — keep them text.
+const isImageKey = (k: string) => IMAGE_KEY.test(k) && !/alt/i.test(k);
+
+/**
+ * Read a dropped/selected image into a data URL. Raster images are downscaled
+ * (max 1600px wide) and re-encoded so the stored string stays reasonable; SVGs
+ * are kept as-is to preserve vector quality.
+ */
+function fileToDataUrl(file: File, maxW = 1600, quality = 0.82): Promise<string> {
+  return new Promise((resolve, reject) => {
+    if (file.type === "image/svg+xml") {
+      const r = new FileReader();
+      r.onload = () => resolve(String(r.result));
+      r.onerror = () => reject(new Error("Could not read file"));
+      r.readAsDataURL(file);
+      return;
+    }
+    const img = new Image();
+    img.onload = () => {
+      const scale = Math.min(1, maxW / img.width || 1);
+      const w = Math.max(1, Math.round(img.width * scale));
+      const h = Math.max(1, Math.round(img.height * scale));
+      const canvas = document.createElement("canvas");
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return reject(new Error("Canvas unsupported"));
+      ctx.drawImage(img, 0, 0, w, h);
+      // WebP keeps transparency (logos/PNGs) at a smaller size; else JPEG.
+      const type =
+        file.type === "image/png" || file.type === "image/webp"
+          ? "image/webp"
+          : "image/jpeg";
+      resolve(canvas.toDataURL(type, quality));
+      URL.revokeObjectURL(img.src);
+    };
+    img.onerror = () => reject(new Error("Could not load image"));
+    img.src = URL.createObjectURL(file);
+  });
+}
 
 // Humanize a key into a label: "freeShipThresholdCents" -> "Free Ship Threshold ($)".
 export function humanize(key: string): string {
@@ -36,6 +80,102 @@ export function blankLike(v: unknown): unknown {
   if (typeof v === "number") return 0;
   if (typeof v === "boolean") return false;
   return "";
+}
+
+/** Image field: live preview + drag-and-drop upload + path/picker fallback. */
+function ImageField({
+  value,
+  onChange,
+  assets,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  assets: Assets;
+}) {
+  const [drag, setDrag] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const listId = useId();
+
+  const handleFile = async (file: File | undefined) => {
+    if (!file || !file.type.startsWith("image/")) return;
+    setBusy(true);
+    try {
+      onChange(await fileToDataUrl(file));
+    } catch {
+      /* ignore unreadable files */
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const isData = value.startsWith("data:");
+
+  return (
+    <div className="flex items-start gap-[12px]">
+      <div className="flex h-[64px] w-[64px] shrink-0 items-center justify-center overflow-hidden rounded-[8px] border border-ink/15 bg-paper">
+        {value ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={value} alt="" className="h-full w-full object-contain" />
+        ) : (
+          <span className="text-[10px] text-muted">none</span>
+        )}
+      </div>
+      <div className="flex flex-1 flex-col gap-[6px]">
+        <div
+          onClick={() => inputRef.current?.click()}
+          onDragOver={(e) => {
+            e.preventDefault();
+            setDrag(true);
+          }}
+          onDragLeave={() => setDrag(false)}
+          onDrop={(e) => {
+            e.preventDefault();
+            setDrag(false);
+            handleFile(e.dataTransfer.files?.[0]);
+          }}
+          className={`flex cursor-pointer items-center justify-center rounded-[8px] border border-dashed px-[12px] py-[10px] text-center text-[12px] transition-colors ${
+            drag
+              ? "border-gold bg-gold/[0.08] text-ink"
+              : "border-ink/25 text-muted hover:border-gold/60"
+          }`}
+        >
+          {busy ? "Processing…" : drag ? "Drop to upload" : "Drag an image here, or click to upload"}
+        </div>
+        <input
+          ref={inputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={(e) => handleFile(e.target.files?.[0])}
+        />
+        <input
+          className={inputClass}
+          list={listId}
+          placeholder="/path.jpg or https://…"
+          value={isData ? "" : value}
+          onChange={(e) => onChange(e.target.value)}
+        />
+        <datalist id={listId}>
+          {assets.images.map((a) => (
+            <option key={a} value={a} />
+          ))}
+        </datalist>
+        {isData && (
+          <span className="text-[11px] text-muted">
+            Uploaded image embedded.{" "}
+            <button
+              type="button"
+              onClick={() => onChange("")}
+              className="text-gold underline"
+            >
+              clear
+            </button>
+          </span>
+        )}
+      </div>
+    </div>
+  );
 }
 
 export function FieldEditor({
@@ -80,6 +220,12 @@ export function FieldEditor({
                     label={`#${i + 1}`}
                   />
                 </div>
+              ) : isImageKey(key) ? (
+                <ImageField
+                  value={String(item ?? "")}
+                  onChange={(v) => onChange([...path, i], v)}
+                  assets={assets}
+                />
               ) : (
                 <input
                   className={inputClass}
@@ -159,6 +305,17 @@ export function FieldEditor({
 
   // string
   const str = String(value ?? "");
+
+  // Image fields get the preview + drag-and-drop uploader.
+  if (isImageKey(key)) {
+    return (
+      <label className={labelClass}>
+        {humanize(key)}
+        <ImageField value={str} onChange={(v) => onChange(path, v)} assets={assets} />
+      </label>
+    );
+  }
+
   const isAsset = ASSET_KEY.test(key);
   const listId = isAsset ? `assets-${path.join("-")}` : undefined;
   const long = str.length > 60 || str.includes("\n");
