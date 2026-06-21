@@ -16,12 +16,8 @@
 export const SESSION_COOKIE = "wptf_admin";
 const SESSION_TTL_SECONDS = 60 * 60 * 24 * 7; // 7 days
 
-const SESSION_SECRET = process.env.SESSION_SECRET;
-if (!SESSION_SECRET) {
-  throw new Error(
-    "SESSION_SECRET is not set. Add it to .env.local (e.g. `openssl rand -hex 32`).",
-  );
-}
+// Read lazily (not at import) so `next build` works before SESSION_SECRET is
+// set. verifySession() treats a missing secret as "no valid session".
 
 const enc = new TextEncoder();
 
@@ -37,9 +33,11 @@ function b64urlToBytes(s: string): Uint8Array {
 }
 
 async function hmacKey(): Promise<CryptoKey> {
+  const secret = process.env.SESSION_SECRET;
+  if (!secret) throw new Error("SESSION_SECRET is not set.");
   return crypto.subtle.importKey(
     "raw",
-    enc.encode(SESSION_SECRET),
+    enc.encode(secret),
     { name: "HMAC", hash: "SHA-256" },
     false,
     ["sign", "verify"],
