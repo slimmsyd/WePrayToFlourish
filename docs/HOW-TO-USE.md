@@ -1,6 +1,6 @@
 # How to use — We Pray to Flourish
 
-A single-product book store (**52 Laws of You** by Yaddin) built on Next.js 16,
+A single-product book store (**52 Laws of You** by Yaadin) built on Next.js 16,
 with Stripe payments, a Neon Postgres database, and an admin CRM so the content
 owner can edit the product, pricing, and copy without touching code.
 

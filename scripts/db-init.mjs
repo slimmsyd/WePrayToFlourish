@@ -45,7 +45,7 @@ const SITE_CONTENT_DDL = `
 
 const DEFAULT_PRODUCT = {
   title: "52 Laws of You",
-  author: "Yaddin",
+  author: "Yaadin",
   format: "Paperback",
   priceCents: 2400,
   currency: "usd",
@@ -58,7 +58,7 @@ const DEFAULT_PRODUCT = {
   hoverVideo: "/book-hover.mp4",
   tagline: "52 Laws of You",
   shortDescription:
-    "52 Laws of You is the book Yaddin has ushered in: a weekly practice in becoming, for anyone learning to speak less, notice more, and flourish.",
+    "52 Laws of You is the book Yaadin has ushered in: a weekly practice in becoming, for anyone learning to speak less, notice more, and flourish.",
   longDescription: [
     "52 Laws of You is a year-long practice in self-mastery. Each week offers a single law to read, sit with, and live. Small enough to begin today, deep enough to return to for a lifetime.",
     "Drawn from faith, observation, and the wisdom of community, it asks one question on every page: who are you becoming when no one is watching?",
