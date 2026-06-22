@@ -58,7 +58,7 @@ export default async function ArtCarousel() {
           rel="noopener"
           className="inline-flex items-center gap-[8px] font-display text-[12px] font-semibold uppercase tracking-[0.3em] text-ink transition-colors hover:text-gold"
         >
-          Instagram <span className="font-normal">&#8599;</span>
+          {site.copy.art.label} <span className="font-normal">&#8599;</span>
         </a>
       </div>
 

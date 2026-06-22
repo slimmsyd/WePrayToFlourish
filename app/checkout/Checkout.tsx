@@ -112,7 +112,7 @@ export default function Checkout() {
           Checkout
         </span>
         <h1 className="m-0 font-display text-[clamp(30px,4vw,52px)] font-normal leading-[1.0] tracking-[-0.02em]">
-          Complete your order
+          {site.copy.checkout.pageTitle}
         </h1>
       </div>
 
@@ -355,7 +355,7 @@ function CheckoutBody({
               <rect x="4" y="11" width="16" height="10" rx="2" />
               <path d="M8 11V8a4 4 0 0 1 8 0v3" />
             </svg>
-            Secure encrypted checkout, powered by Stripe.
+            {checkout.securityNote}
           </span>
         </form>
       ) : (
@@ -473,8 +473,8 @@ function CheckoutBody({
         </div>
 
         <div className="mt-[2px] flex items-center gap-[9px] text-[12.5px] tracking-[0.02em] text-muted">
-          <span className="text-gold">&#10022;</span> Free worldwide shipping
-          over {fmt(freeShipAt)}
+          <span className="text-gold">&#10022;</span> {checkout.shippingNote}{" "}
+          {fmt(freeShipAt)}
         </div>
       </aside>
     </div>
