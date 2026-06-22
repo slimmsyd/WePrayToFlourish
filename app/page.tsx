@@ -1,3 +1,4 @@
+import { getSiteContent } from "@/lib/content";
 import SiteHeader from "./components/SiteHeader";
 import Hero from "./components/Hero";
 import ArtCarousel from "./components/ArtCarousel";
@@ -8,17 +9,18 @@ import FreeChapter from "./components/FreeChapter";
 import Community from "./components/Community";
 import SiteFooter from "./components/SiteFooter";
 
-export default function WePrayToFlourish() {
+export default async function WePrayToFlourish() {
+  const { sections } = await getSiteContent();
   return (
     <>
       <SiteHeader />
-      <Hero />
-      <ArtCarousel />
-      <Quote />
-      <AboutBook />
-      <AboutAuthor />
-      <FreeChapter />
-      <Community />
+      {sections.hero && <Hero />}
+      {sections.art && <ArtCarousel />}
+      {sections.quote && <Quote />}
+      {sections.aboutBook && <AboutBook />}
+      {sections.aboutAuthor && <AboutAuthor />}
+      {sections.freeChapter && <FreeChapter />}
+      {sections.community && <Community />}
       <SiteFooter />
     </>
   );

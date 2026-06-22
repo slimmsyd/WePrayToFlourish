@@ -34,6 +34,15 @@ export type ProductContent = {
 };
 
 export type SiteConfig = {
+  sections: {
+    hero: boolean;
+    art: boolean;
+    quote: boolean;
+    aboutBook: boolean;
+    aboutAuthor: boolean;
+    freeChapter: boolean;
+    community: boolean;
+  };
   brand: {
     siteName: string;
     domain: string;
@@ -56,6 +65,13 @@ export type SiteConfig = {
       overlay: number;
       /** Slide rotation interval in milliseconds. */
       intervalMs: number;
+    };
+    // Keep `art` an OBJECT. The admin editor's isImageKey() regex matches the
+    // substring "art", so a string-typed `art` key would render as an image
+    // uploader. Nested keys like `label` are safe.
+    art: {
+      /** Label above the Instagram art marquee. */
+      label: string;
     };
     quote: {
       eyebrow: string;
@@ -99,9 +115,15 @@ export type SiteConfig = {
       photos: { caption: string; image: string }[];
     };
     checkout: {
+      /** Checkout page <h1>. */
+      pageTitle: string;
       summaryItemNote: string;
       successTitle: string;
       successBody: string;
+      /** Trust line under the Pay button. */
+      securityNote: string;
+      /** Shipping reassurance prefix; the "$X" amount is appended by the component. */
+      shippingNote: string;
     };
   };
   seo: {
@@ -113,6 +135,16 @@ export type SiteConfig = {
 };
 
 export const site: SiteConfig = {
+  sections: {
+    hero: true,
+    art: true,
+    quote: true,
+    aboutBook: true,
+    aboutAuthor: true,
+    freeChapter: true,
+    community: true,
+  },
+
   brand: {
     siteName: "We Pray To Flourish",
     domain: "wepray2flourish.net",
@@ -181,6 +213,9 @@ export const site: SiteConfig = {
       overlay: 0.55,
       intervalMs: 4000,
     },
+    art: {
+      label: "Instagram",
+    },
     quote: {
       eyebrow: "From the book",
       text: "Speak less, and you’ll learn a lot about them,",
@@ -236,10 +271,13 @@ export const site: SiteConfig = {
       ],
     },
     checkout: {
+      pageTitle: "Complete your order",
       summaryItemNote: "Includes free first chapter",
       successTitle: "Thank you. Your order is in.",
       successBody:
         "A confirmation is on its way to your inbox. 52 Laws of You will ship shortly, and your free first chapter is included as a digital download.",
+      securityNote: "Secure encrypted checkout, powered by Stripe.",
+      shippingNote: "Free worldwide shipping over",
     },
   },
 
