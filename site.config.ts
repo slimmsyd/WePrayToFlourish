@@ -114,7 +114,7 @@ export type SiteConfig = {
 
 export const site: SiteConfig = {
   brand: {
-    siteName: "We Pray to Flourish",
+    siteName: "We Pray To Flourish",
     domain: "wepray2flourish.net",
     logo: "/logo.jpg",
     logoAlt: "We Pray to Flourish",
@@ -244,11 +244,12 @@ export const site: SiteConfig = {
   },
 
   seo: {
-    title: "We Pray To Flourish — 52 Laws of You by Yaddin",
+    title: "We Pray To Flourish ~ 52 Laws of You by Yaddin",
     description:
       "52 Laws of You is a year-long practice in becoming, for anyone learning to speak less, notice more, and flourish. A new book by Yaddin.",
-    ogTitle: "We Pray To Flourish — 52 Laws of You",
-    ogDescription: "A weekly practice in becoming. Read the first law free.",
+    ogTitle: "We Pray To Flourish",
+    ogDescription:
+      "52 Laws of You ~ A weekly practice in becoming. Read the first law free.",
   },
 };
 
