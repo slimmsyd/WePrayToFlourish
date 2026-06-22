@@ -66,6 +66,9 @@ export type SiteConfig = {
       /** Slide rotation interval in milliseconds. */
       intervalMs: number;
     };
+    // Keep `art` an OBJECT. The admin editor's isImageKey() regex matches the
+    // substring "art", so a string-typed `art` key would render as an image
+    // uploader. Nested keys like `label` are safe.
     art: {
       /** Label above the Instagram art marquee. */
       label: string;
