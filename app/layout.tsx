@@ -5,6 +5,7 @@ import { CartProvider } from "./cart/CartContext";
 import { SiteContentProvider } from "@/lib/site-content";
 import { getSiteContent } from "@/lib/content";
 import { resolveSiteUrl } from "@/lib/site-url";
+import GoogleAnalytics from "./components/GoogleAnalytics";
 
 const schibsted = Schibsted_Grotesk({
   variable: "--font-schibsted",
@@ -55,6 +56,7 @@ export default async function RootLayout({
       className={`${schibsted.variable} ${hanken.variable} h-full antialiased`}
     >
       <body className="min-h-full">
+        <GoogleAnalytics />
         <SiteContentProvider content={site}>
           <CartProvider>{children}</CartProvider>
         </SiteContentProvider>
