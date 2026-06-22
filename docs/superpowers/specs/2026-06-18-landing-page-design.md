@@ -8,7 +8,7 @@
 
 Port the handoff design (a framework-free inline-styled HTML page) into the Next.js
 App Router as a production-quality, single-route marketing site for the book
-*52 Laws of You* by Yaddin. Promote the book and capture free-chapter email signups.
+*52 Laws of You* by Yaadin. Promote the book and capture free-chapter email signups.
 
 ## Decisions
 

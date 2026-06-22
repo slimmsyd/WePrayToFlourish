@@ -122,7 +122,7 @@ export const site: SiteConfig = {
 
   product: {
     title: "52 Laws of You",
-    author: "Yaddin",
+    author: "Yaadin",
     format: "Paperback",
     priceCents: 2400,
     currency: "usd",
@@ -135,7 +135,7 @@ export const site: SiteConfig = {
     hoverVideo: "/book-hover.mp4",
     tagline: "52 Laws of You",
     shortDescription:
-      "52 Laws of You is the book Yaddin has ushered in: a weekly practice in becoming, for anyone learning to speak less, notice more, and flourish.",
+      "52 Laws of You is the book Yaadin has ushered in: a weekly practice in becoming, for anyone learning to speak less, notice more, and flourish.",
     longDescription: [
       "52 Laws of You is a year-long practice in self-mastery. Each week offers a single law to read, sit with, and live. Small enough to begin today, deep enough to return to for a lifetime.",
       "Drawn from faith, observation, and the wisdom of community, it asks one question on every page: who are you becoming when no one is watching?",
@@ -198,11 +198,11 @@ export const site: SiteConfig = {
       headline: "Faith, philosophy, and the work of becoming.",
       metaLine: "Writer · Speak less, notice more",
       body: [
-        "Yaddin writes at the intersection of faith, philosophy, and the everyday discipline of becoming a better person.",
+        "Yaadin writes at the intersection of faith, philosophy, and the everyday discipline of becoming a better person.",
         "His work invites readers to speak less, notice more, and build lives and communities that truly flourish.",
       ],
       image: "/AuthorPicture.jpg",
-      imageAlt: "Portrait of Yaddin",
+      imageAlt: "Portrait of Yaadin",
       cta: { label: "Get the first chapter free", href: "#chapter" },
       songsLabel: "Listen",
       songs: [
@@ -223,12 +223,12 @@ export const site: SiteConfig = {
       submitLabel: "Send me the chapter",
       successTitle: "Thank you.",
       successBody: "Check your inbox. The first law is on its way.",
-      finePrint: "No spam. One chapter, then occasional notes from Yaddin.",
+      finePrint: "No spam. One chapter, then occasional notes from Yaadin.",
     },
     community: {
       eyebrow: "Community service",
       headline: "The work beyond the page.",
-      body: "Yaddin gives his time to the communities that shaped him: feeding programs, youth mentorship, and the quiet labor of simply showing up.",
+      body: "Yaadin gives his time to the communities that shaped him: feeding programs, youth mentorship, and the quiet labor of simply showing up.",
       photos: [
         { caption: "Community gathering", image: "" },
         { caption: "Service day", image: "" },
@@ -244,9 +244,9 @@ export const site: SiteConfig = {
   },
 
   seo: {
-    title: "We Pray To Flourish ~ 52 Laws of You by Yaddin",
+    title: "We Pray To Flourish ~ 52 Laws of You by Yaadin",
     description:
-      "52 Laws of You is a year-long practice in becoming, for anyone learning to speak less, notice more, and flourish. A new book by Yaddin.",
+      "52 Laws of You is a year-long practice in becoming, for anyone learning to speak less, notice more, and flourish. A new book by Yaadin.",
     ogTitle: "We Pray To Flourish",
     ogDescription:
       "52 Laws of You ~ A weekly practice in becoming. Read the first law free.",
