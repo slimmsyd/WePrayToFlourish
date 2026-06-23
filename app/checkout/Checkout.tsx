@@ -226,6 +226,7 @@ function CheckoutBody({
             body: JSON.stringify({ paymentIntentId: paymentIntent.id }),
           }).catch(() => {});
 
+          form.reset();
           setOrderedQty(chosenQty);
           setDone(true);
           clear();

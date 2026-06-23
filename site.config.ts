@@ -107,6 +107,21 @@ export type SiteConfig = {
       successTitle: string;
       successBody: string;
       finePrint: string;
+      /** Resend notification copy — editable in the admin CRM. */
+      emails: {
+        welcome: {
+          subject: string;
+          headline: string;
+          body: string;
+          signOff: string;
+          footer: string;
+        };
+        admin: {
+          subject: string;
+          headline: string;
+          body: string;
+        };
+      };
     };
     community: {
       eyebrow: string;
@@ -124,6 +139,21 @@ export type SiteConfig = {
       securityNote: string;
       /** Shipping reassurance prefix; the "$X" amount is appended by the component. */
       shippingNote: string;
+      /** Resend notification copy — editable in the admin CRM. */
+      emails: {
+        customer: {
+          subject: string;
+          headline: string;
+          body: string;
+          signOff: string;
+          footer: string;
+        };
+        admin: {
+          subject: string;
+          headline: string;
+          body: string;
+        };
+      };
     };
   };
   seo: {
@@ -259,6 +289,21 @@ export const site: SiteConfig = {
       successTitle: "Thank you.",
       successBody: "Check your inbox. The first law is on its way.",
       finePrint: "No spam. One chapter, then occasional notes from Yaadin.",
+      emails: {
+        welcome: {
+          subject: "Your first law is on its way",
+          headline: "Thank you for signing up.",
+          body: "You’re on the list. We’ll send the opening chapter of 52 Laws of You to this inbox shortly — the first law in a year-long practice of becoming.\n\nSmall enough to begin today. Deep enough to return to for a lifetime.",
+          signOff: "With gratitude,\nYaadin",
+          footer:
+            "No spam. One chapter, then occasional notes from We Pray To Flourish. If you didn’t request this, you can ignore this email.",
+        },
+        admin: {
+          subject: "New signup — free chapter list",
+          headline: "Someone joined the list",
+          body: "A new reader signed up for the free chapter. Their welcome email has been sent automatically and the address is saved to the newsletter list.",
+        },
+      },
     },
     community: {
       eyebrow: "Community service",
@@ -278,6 +323,21 @@ export const site: SiteConfig = {
         "A confirmation is on its way to your inbox. 52 Laws of You will ship shortly, and your free first chapter is included as a digital download.",
       securityNote: "Secure encrypted checkout, powered by Stripe.",
       shippingNote: "Free worldwide shipping over",
+      emails: {
+        customer: {
+          subject: "Your order is confirmed",
+          headline: "Thank you. Your order is in.",
+          body: "We have received your order and are preparing your copy for shipping. A confirmation with your full order details is below.\n\nYour free first chapter is included with this purchase.",
+          signOff: "With gratitude,\nYaadin",
+          footer:
+            "Questions about your order? Reply to this email and we will get back to you. If you did not place this order, please contact us right away.",
+        },
+        admin: {
+          subject: "New order",
+          headline: "New order received",
+          body: "A customer has completed checkout. Fulfillment details are below. The order is also recorded in the admin CRM.",
+        },
+      },
     },
   },
 

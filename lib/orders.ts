@@ -19,6 +19,7 @@ export type OrderRow = {
   currency: string;
   status: string;
   created_at: string;
+  notification_sent_at: string | null;
 };
 
 /** Orders for the admin CRM, newest first. */
@@ -26,7 +27,7 @@ export async function getOrders(limit = 200): Promise<OrderRow[]> {
   const rows = await sql`
     SELECT id, stripe_payment_intent_id, email, name, address_line, city,
            postal_code, country, qty, subtotal_cents, shipping_cents, tax_cents,
-           total_cents, currency, status, created_at
+           total_cents, currency, status, created_at, notification_sent_at
     FROM orders
     ORDER BY created_at DESC
     LIMIT ${limit}
@@ -58,12 +59,14 @@ export const ORDERS_DDL = `
     total_cents               INTEGER NOT NULL,
     currency                  TEXT NOT NULL DEFAULT 'usd',
     status                    TEXT NOT NULL DEFAULT 'paid',
+    notification_sent_at      TIMESTAMPTZ,
     created_at                TIMESTAMPTZ NOT NULL DEFAULT now()
   );
 `;
 
 export async function ensureOrdersTable(): Promise<void> {
   await sql.query(ORDERS_DDL);
+  await sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS notification_sent_at TIMESTAMPTZ`;
 }
 
 export type OrderInput = {

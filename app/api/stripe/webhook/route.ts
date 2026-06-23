@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import type Stripe from "stripe";
 import { stripe } from "@/lib/stripe";
 import { recordOrderFromIntent } from "@/lib/orders";
+import { notifyOrderIfNeeded } from "@/lib/order-notifications";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -44,6 +45,7 @@ export async function POST(req: NextRequest) {
       case "payment_intent.succeeded": {
         const intent = event.data.object as Stripe.PaymentIntent;
         await recordOrderFromIntent(intent);
+        await notifyOrderIfNeeded(intent.id);
         console.log("[stripe/webhook] order recorded for", intent.id);
         break;
       }

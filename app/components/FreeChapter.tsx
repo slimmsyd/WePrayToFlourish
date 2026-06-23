@@ -7,12 +7,30 @@ export default function FreeChapter() {
   const c = useSiteContent().copy.freeChapter;
   const [email, setEmail] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!email.trim()) return;
-    // TODO: POST email to list provider (e.g. a /api route → email service).
-    setSubmitted(true);
+    if (!email.trim() || submitting) return;
+
+    setSubmitting(true);
+    setError(null);
+
+    try {
+      const res = await fetch("/api/newsletter", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Could not sign up");
+      setSubmitted(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -29,25 +47,33 @@ export default function FreeChapter() {
         </p>
 
         {!submitted ? (
-          <form
-            onSubmit={onSubmit}
-            className="flex w-full max-w-[540px] flex-wrap justify-center gap-3"
-          >
-            <input
-              type="email"
-              required
-              placeholder={c.placeholder}
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="min-w-0 flex-[1_1_260px] rounded-full border border-paper/30 bg-transparent px-[22px] py-4 font-body text-[16px] text-paper outline-none transition-colors focus:border-gold-light"
-            />
-            <button
-              type="submit"
-              className="flex-none cursor-pointer rounded-full border-none bg-paper px-[30px] py-4 font-body text-[16px] font-semibold text-ink transition-colors hover:bg-white"
+          <>
+            <form
+              onSubmit={onSubmit}
+              className="flex w-full max-w-[540px] flex-wrap justify-center gap-3"
             >
-              {c.submitLabel}
-            </button>
-          </form>
+              <input
+                type="email"
+                required
+                placeholder={c.placeholder}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="min-w-0 flex-[1_1_260px] rounded-full border border-paper/30 bg-transparent px-[22px] py-4 font-body text-[16px] text-paper outline-none transition-colors focus:border-gold-light"
+              />
+              <button
+                type="submit"
+                disabled={submitting}
+                className="flex-none cursor-pointer rounded-full border-none bg-paper px-[30px] py-4 font-body text-[16px] font-semibold text-ink transition-colors hover:bg-white disabled:cursor-wait disabled:opacity-70"
+              >
+                {submitting ? "Signing up…" : c.submitLabel}
+              </button>
+            </form>
+            {error ? (
+              <p className="w-full max-w-[540px] text-[14px] text-[#f2c4c0]">
+                {error}
+              </p>
+            ) : null}
+          </>
         ) : (
           <div className="flex flex-col items-center gap-[10px] py-2">
             <span className="font-display text-[clamp(20px,2.4vw,28px)] text-gold-light">

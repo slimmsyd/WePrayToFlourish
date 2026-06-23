@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { stripe } from "@/lib/stripe";
 import { recordOrderFromIntent } from "@/lib/orders";
+import { notifyOrderIfNeeded } from "@/lib/order-notifications";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -36,6 +37,7 @@ export async function POST(req: NextRequest) {
     }
 
     const order = await recordOrderFromIntent(intent);
+    await notifyOrderIfNeeded(intent.id);
     return NextResponse.json({ ok: true, order });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Failed to record order";

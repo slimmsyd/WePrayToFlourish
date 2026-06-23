@@ -27,7 +27,17 @@ const DDL = `
     total_cents               INTEGER NOT NULL,
     currency                  TEXT NOT NULL DEFAULT 'usd',
     status                    TEXT NOT NULL DEFAULT 'paid',
+    notification_sent_at      TIMESTAMPTZ,
     created_at                TIMESTAMPTZ NOT NULL DEFAULT now()
+  );
+`;
+
+const NEWSLETTER_DDL = `
+  CREATE TABLE IF NOT EXISTS newsletter_subscribers (
+    id                BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    email             TEXT NOT NULL UNIQUE,
+    welcome_sent_at   TIMESTAMPTZ,
+    created_at        TIMESTAMPTZ NOT NULL DEFAULT now()
   );
 `;
 
@@ -68,8 +78,14 @@ const DEFAULT_PRODUCT = {
 
 try {
   await sql.query(DDL);
+  await sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS notification_sent_at TIMESTAMPTZ`;
   const [{ count }] = await sql`SELECT count(*)::int AS count FROM orders;`;
   console.log(`✓ orders table ready (current rows: ${count})`);
+
+  await sql.query(NEWSLETTER_DDL);
+  const [{ subs }] =
+    await sql`SELECT count(*)::int AS subs FROM newsletter_subscribers;`;
+  console.log(`✓ newsletter_subscribers ready (current rows: ${subs})`);
 
   await sql.query(SITE_CONTENT_DDL);
   // Seed defaults only if no row exists yet — never clobber admin edits.
