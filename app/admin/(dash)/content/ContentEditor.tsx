@@ -23,6 +23,27 @@ function setAt(obj: unknown, path: Path, value: unknown): unknown {
 
 const initialState: SaveState = {};
 
+/** Surface catalog + shipping before the rest of the site copy. */
+const EDITOR_ORDER = [
+  "commerce",
+  "products",
+  "sections",
+  "brand",
+  "nav",
+  "footer",
+  "social",
+  "copy",
+  "seo",
+];
+
+function sortedEntries(draft: SiteContent): [string, unknown][] {
+  return Object.entries(draft as Record<string, unknown>).sort(([a], [b]) => {
+    const ai = EDITOR_ORDER.indexOf(a);
+    const bi = EDITOR_ORDER.indexOf(b);
+    return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
+  });
+}
+
 export default function ContentEditor({
   initial,
   assets,
@@ -33,14 +54,33 @@ export default function ContentEditor({
   const [draft, setDraft] = useState<SiteContent>(() => structuredClone(initial));
   const [state, action, pending] = useActionState(saveContentAction, initialState);
 
-  const onChange = (path: Path, value: unknown) =>
-    setDraft((d) => setAt(d, path, value) as SiteContent);
+  const onChange = (path: Path, value: unknown) => {
+    setDraft((d) => {
+      let next = setAt(d, path, value) as SiteContent;
+      if (
+        path.length === 3 &&
+        path[0] === "products" &&
+        path[2] === "featured" &&
+        value === true
+      ) {
+        const idx = path[1] as number;
+        next = {
+          ...next,
+          products: next.products.map((p, i) => ({
+            ...p,
+            featured: i === idx,
+          })),
+        };
+      }
+      return next;
+    });
+  };
 
   return (
     <form action={action} className="flex flex-col gap-[18px]">
       <input type="hidden" name="draft" value={JSON.stringify(draft)} />
 
-      {Object.entries(draft as Record<string, unknown>).map(([k, v]) => (
+      {sortedEntries(draft).map(([k, v]) => (
         <FieldEditor
           key={k}
           value={v}

@@ -1,4 +1,4 @@
-import { getOrders } from "@/lib/orders";
+import { getOrdersWithItems } from "@/lib/orders";
 
 export const dynamic = "force-dynamic";
 
@@ -8,7 +8,7 @@ const money = (cents: number, currency: string) =>
   );
 
 export default async function AdminOrdersPage() {
-  const orders = await getOrders();
+  const orders = await getOrdersWithItems();
 
   return (
     <div className="flex flex-col gap-[clamp(20px,4vw,32px)]">
@@ -32,8 +32,8 @@ export default async function AdminOrdersPage() {
               <tr className="bg-panel text-left font-display text-[11px] uppercase tracking-[0.12em] text-muted">
                 <th className="px-[14px] py-[12px] font-medium">Date</th>
                 <th className="px-[14px] py-[12px] font-medium">Customer</th>
+                <th className="px-[14px] py-[12px] font-medium">Items</th>
                 <th className="px-[14px] py-[12px] font-medium">Ship to</th>
-                <th className="px-[14px] py-[12px] font-medium text-center">Qty</th>
                 <th className="px-[14px] py-[12px] font-medium text-right">Total</th>
                 <th className="px-[14px] py-[12px] font-medium">Status</th>
               </tr>
@@ -55,6 +55,25 @@ export default async function AdminOrdersPage() {
                     <span className="block text-[12px] text-muted">{o.email}</span>
                   </td>
                   <td className="px-[14px] py-[12px] text-ink-soft">
+                    {o.items.length > 0 ? (
+                      <ul className="m-0 list-none p-0">
+                        {o.items.map((item) => (
+                          <li key={item.id} className="mb-[6px] last:mb-0">
+                            <span className="block font-medium text-ink">
+                              {item.product_title}
+                            </span>
+                            <span className="text-[11px] text-muted">
+                              {item.product_format} · × {item.qty} ·{" "}
+                              {money(item.line_subtotal_cents, o.currency)}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <span>× {o.qty}</span>
+                    )}
+                  </td>
+                  <td className="px-[14px] py-[12px] text-ink-soft">
                     {o.address_line ? (
                       <>
                         {o.address_line}
@@ -66,7 +85,6 @@ export default async function AdminOrdersPage() {
                       "—"
                     )}
                   </td>
-                  <td className="px-[14px] py-[12px] text-center text-ink-soft">{o.qty}</td>
                   <td className="whitespace-nowrap px-[14px] py-[12px] text-right font-medium text-ink">
                     {money(o.total_cents, o.currency)}
                   </td>

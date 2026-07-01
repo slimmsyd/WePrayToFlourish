@@ -1,6 +1,7 @@
 "use client";
 
 import { Fragment, useId, useRef, useState } from "react";
+import { PRODUCT_TEMPLATE } from "@/site.config";
 
 export type Assets = { images: string[]; videos: string[] };
 
@@ -197,8 +198,14 @@ export function FieldEditor({
   if (Array.isArray(value)) {
     const itemsAreObjects =
       value.length > 0 && typeof value[0] === "object" && value[0] !== null;
-    const sample = value[0] ?? "";
-    const addRow = () => onChange(path, [...value, blankLike(sample)]);
+    const sample = value[0] ?? (key === "products" ? PRODUCT_TEMPLATE : "");
+    const addRow = () =>
+      onChange(path, [
+        ...value,
+        key === "products"
+          ? { ...PRODUCT_TEMPLATE, featured: value.length === 0 }
+          : blankLike(sample),
+      ]);
     const removeRow = (i: number) =>
       onChange(path, value.filter((_, j) => j !== i));
 
@@ -207,7 +214,23 @@ export function FieldEditor({
         <legend className="px-[6px] font-display text-[12px] uppercase tracking-[0.12em] text-ink">
           {label ?? humanize(key)}
         </legend>
-        {value.map((item, i) => (
+        {key === "products" && (
+          <p className="m-0 text-[12px] leading-[1.5] text-muted">
+            Each product needs a unique Id. Mark one as Featured — it drives the hero,
+            footer, and newsletter.
+          </p>
+        )}
+        {value.map((item, i) => {
+          const rowLabel =
+            key === "products" &&
+            item &&
+            typeof item === "object" &&
+            "title" in item
+              ? String((item as { title?: string; id?: string }).title || "") ||
+                String((item as { id?: string }).id || "") ||
+                `#${i + 1}`
+              : `#${i + 1}`;
+          return (
           <div key={i} className="flex items-start gap-[8px]">
             <div className="flex-1">
               {itemsAreObjects ? (
@@ -217,7 +240,7 @@ export function FieldEditor({
                     path={[...path, i]}
                     onChange={onChange}
                     assets={assets}
-                    label={`#${i + 1}`}
+                    label={rowLabel}
                   />
                 </div>
               ) : isImageKey(key) ? (
@@ -242,13 +265,14 @@ export function FieldEditor({
               Remove
             </button>
           </div>
-        ))}
+        );
+        })}
         <button
           type="button"
           onClick={addRow}
           className="self-start rounded-full border border-gold/40 px-[14px] py-[6px] font-display text-[12px] text-gold transition-colors hover:bg-gold/[0.08]"
         >
-          + Add
+          {key === "products" ? "+ Add product" : "+ Add"}
         </button>
       </fieldset>
     );
@@ -273,13 +297,20 @@ export function FieldEditor({
   // ── Scalars ───────────────────────────────────────────────
   if (typeof value === "boolean") {
     return (
-      <label className="flex items-center gap-[8px] text-[13px] text-ink-soft">
-        <input
-          type="checkbox"
-          checked={value}
-          onChange={(e) => onChange(path, e.target.checked)}
-        />
-        {humanize(key)}
+      <label className="flex flex-col gap-[4px] text-[13px] text-ink-soft">
+        <span className="flex items-center gap-[8px]">
+          <input
+            type="checkbox"
+            checked={value}
+            onChange={(e) => onChange(path, e.target.checked)}
+          />
+          {humanize(key)}
+        </span>
+        {key === "featured" && (
+          <span className="pl-[22px] text-[11px] text-muted">
+            Only one product can be featured. Checking this unchecks the others.
+          </span>
+        )}
       </label>
     );
   }
@@ -319,9 +350,15 @@ export function FieldEditor({
   const isAsset = ASSET_KEY.test(key);
   const listId = isAsset ? `assets-${path.join("-")}` : undefined;
   const long = str.length > 60 || str.includes("\n");
+  const idPlaceholder = key === "id" ? "e.g. 52-laws-of-you" : undefined;
   return (
     <label className={labelClass}>
       {humanize(key)}
+      {key === "id" && (
+        <span className="text-[11px] text-muted">
+          Unique slug — used in cart and orders. No spaces.
+        </span>
+      )}
       {long ? (
         <textarea
           rows={Math.min(8, Math.max(2, str.split("\n").length))}
@@ -334,6 +371,7 @@ export function FieldEditor({
           <input
             className={inputClass}
             list={listId}
+            placeholder={idPlaceholder}
             value={str}
             onChange={(e) => onChange(path, e.target.value)}
           />

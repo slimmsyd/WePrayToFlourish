@@ -5,8 +5,8 @@ import {
   orderAdminEmail,
   orderConfirmationEmail,
 } from "./email-templates";
-import { getSiteContent } from "./content";
-import type { OrderRow } from "./orders";
+import { getFeaturedProduct, getSiteContent } from "./content";
+import { getOrderItems, type OrderRow } from "./orders";
 import { resolveSiteUrl } from "./site-url";
 import site from "@/site.config";
 import {
@@ -59,7 +59,6 @@ export async function sendOrderEmails(order: OrderRow): Promise<SendResult> {
   }
 
   const siteContent = await getSiteContent();
-  const product = siteContent.product;
   const emailCopy = siteContent.copy.checkout.emails;
   const siteUrl = resolveSiteUrl(siteContent.brand.domain);
   const orderedAt = new Intl.DateTimeFormat("en-US", {
@@ -67,15 +66,32 @@ export async function sendOrderEmails(order: OrderRow): Promise<SendResult> {
     timeStyle: "short",
   }).format(new Date(order.created_at));
 
+  const dbItems = await getOrderItems(order.id);
+  const lineItems =
+    dbItems.length > 0
+      ? dbItems.map((item) => ({
+          title: item.product_title,
+          format: item.product_format,
+          author: item.product_author,
+          qty: item.qty,
+          lineSubtotalCents: item.line_subtotal_cents,
+        }))
+      : [
+          {
+            title: "Order",
+            format: "",
+            author: "",
+            qty: order.qty,
+            lineSubtotalCents: order.subtotal_cents,
+          },
+        ];
+
   const customerTpl = orderConfirmationEmail({
     siteName: siteContent.brand.siteName,
     siteUrl,
     customerName: order.name || "friend",
     customerEmail: order.email,
-    productTitle: product.title,
-    productAuthor: product.author,
-    productFormat: product.format,
-    qty: order.qty,
+    lineItems,
     subtotalCents: order.subtotal_cents,
     shippingCents: order.shipping_cents,
     taxCents: order.tax_cents,
@@ -107,10 +123,7 @@ export async function sendOrderEmails(order: OrderRow): Promise<SendResult> {
     adminOrdersUrl: `${siteUrl}/admin/orders`,
     customerName: order.name,
     customerEmail: order.email,
-    productTitle: product.title,
-    productAuthor: product.author,
-    productFormat: product.format,
-    qty: order.qty,
+    lineItems,
     subtotalCents: order.subtotal_cents,
     shippingCents: order.shipping_cents,
     taxCents: order.tax_cents,
@@ -145,14 +158,14 @@ export async function sendNewsletterEmails(email: string): Promise<SendResult> {
   }
 
   const siteContent = await getSiteContent();
-  const product = siteContent.product;
+  const featured = await getFeaturedProduct();
   const emailCopy = siteContent.copy.freeChapter.emails;
   const siteUrl = resolveSiteUrl(siteContent.brand.domain);
 
   const welcomeTpl = newsletterWelcomeEmail({
     siteName: siteContent.brand.siteName,
-    productTitle: product.title,
-    author: product.author,
+    productTitle: featured?.title ?? siteContent.brand.siteName,
+    author: featured?.author ?? siteContent.brand.siteName,
     siteUrl,
     ...emailCopy.welcome,
   });
@@ -168,7 +181,7 @@ export async function sendNewsletterEmails(email: string): Promise<SendResult> {
 
   const adminTpl = newsletterAdminEmail({
     email,
-    productTitle: product.title,
+    productTitle: featured?.title ?? siteContent.brand.siteName,
     siteName: siteContent.brand.siteName,
     signedUpAt: new Intl.DateTimeFormat("en-US", {
       dateStyle: "medium",

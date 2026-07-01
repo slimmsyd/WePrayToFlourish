@@ -3,17 +3,26 @@
 import { useEffect, useRef, useState } from "react";
 import { useCart } from "../cart/CartContext";
 
-export default function AddToCartButton({ label }: { label: string }) {
+export default function AddToCartButton({
+  productId,
+  label,
+}: {
+  productId: string;
+  label: string;
+}) {
   const { add } = useCart();
   const [added, setAdded] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  useEffect(() => () => {
-    if (timer.current) clearTimeout(timer.current);
-  }, []);
+  useEffect(
+    () => () => {
+      if (timer.current) clearTimeout(timer.current);
+    },
+    [],
+  );
 
   const onClick = () => {
-    add();
+    add(productId);
     setAdded(true);
     if (timer.current) clearTimeout(timer.current);
     timer.current = setTimeout(() => setAdded(false), 1800);

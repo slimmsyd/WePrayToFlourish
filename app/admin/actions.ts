@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { SESSION_COOKIE, signSession, verifyPassword } from "@/lib/auth";
 import { requireAdmin } from "@/lib/auth-server";
+import { PRODUCT_TEMPLATE } from "@/site.config";
 import { defaultContent, updateSiteContent, type SiteContent } from "@/lib/content";
 
 export type LoginState = { error?: string };
@@ -46,7 +47,9 @@ export async function logoutAction(): Promise<void> {
 function validateShape(base: unknown, value: unknown, path: string[]): unknown {
   if (Array.isArray(base)) {
     if (!Array.isArray(value)) throw new Error(`${path.join(".")} must be a list`);
-    const sample = base[0];
+    const sample =
+      base[0] ??
+      (path[path.length - 1] === "products" ? PRODUCT_TEMPLATE : undefined);
     return value.map((v, i) =>
       sample !== undefined && typeof sample === "object" && sample !== null
         ? validateShape(sample, v, [...path, String(i)])
@@ -94,6 +97,41 @@ export async function saveContentAction(
     validated = validateShape(defaultContent, draft, []) as SiteContent;
   } catch (err) {
     return { error: err instanceof Error ? err.message : "Invalid content." };
+  }
+
+  if (!validated.products?.length) {
+    return { error: "At least one product is required." };
+  }
+
+  const ids = validated.products.map((p) => p.id?.trim()).filter(Boolean);
+  if (ids.length !== validated.products.length) {
+    return { error: "Every product needs a unique id (e.g. 52-laws-of-you)." };
+  }
+  if (new Set(ids).size !== ids.length) {
+    return { error: "Product ids must be unique." };
+  }
+
+  const featuredCount = validated.products.filter((p) => p.featured).length;
+  if (featuredCount !== 1) {
+    const products = validated.products.map((p, i) => ({
+      ...p,
+      featured: featuredCount === 0 ? i === 0 : p.featured,
+    }));
+    if (featuredCount > 1) {
+      let kept = false;
+      validated = {
+        ...validated,
+        products: products.map((p) => {
+          if (p.featured && !kept) {
+            kept = true;
+            return p;
+          }
+          return { ...p, featured: false };
+        }),
+      };
+    } else {
+      validated = { ...validated, products };
+    }
   }
 
   try {

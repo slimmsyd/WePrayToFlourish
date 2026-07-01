@@ -11,8 +11,12 @@ export default function Hero() {
   const site = useSiteContent();
   const { headline, slides: SLIDES, primaryCta, secondaryCta, overlay, intervalMs } =
     site.copy.hero;
-  const byline = `A new book by ${site.product.author}`;
-  const sub = site.product.shortDescription;
+  const featured =
+    site.products.find((p) => p.featured) ?? site.products[0] ?? null;
+  const byline = featured
+    ? `A new book by ${featured.author}`
+    : site.brand.siteName;
+  const sub = featured?.shortDescription ?? site.seo.description;
   const [slide, setSlide] = useState(0);
 
   useEffect(() => {

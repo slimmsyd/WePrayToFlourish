@@ -4,15 +4,16 @@ import Link from "next/link";
 import { useCart } from "../cart/CartContext";
 
 export default function CartButton() {
-  const { qty, ready } = useCart();
-  const hasItems = ready && qty > 0;
-  // Empty cart -> book section; cart with items -> checkout.
+  const { itemCount, ready } = useCart();
+  const hasItems = ready && itemCount > 0;
   const href = hasItems ? "/checkout" : "/#book";
 
   return (
     <Link
       href={href}
-      aria-label={hasItems ? `Cart, ${qty} item${qty > 1 ? "s" : ""}` : "Cart"}
+      aria-label={
+        hasItems ? `Cart, ${itemCount} item${itemCount > 1 ? "s" : ""}` : "Cart"
+      }
       className="relative inline-flex text-ink transition-colors hover:text-gold"
     >
       <svg
@@ -31,7 +32,7 @@ export default function CartButton() {
       </svg>
       {hasItems && (
         <span className="absolute -right-[7px] -top-[6px] flex h-[15px] min-w-[15px] items-center justify-center rounded-full bg-gold px-[3px] font-display text-[9px] font-semibold leading-none text-paper">
-          {qty}
+          {itemCount}
         </span>
       )}
     </Link>

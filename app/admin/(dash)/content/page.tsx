@@ -49,6 +49,16 @@ export default async function AdminContentPage() {
           dollars; the server charges exactly what you set here.
         </p>
       </div>
+
+      <div className="rounded-[10px] border border-gold/30 bg-gold/[0.06] px-[18px] py-[14px] text-[13px] leading-[1.55] text-ink-soft">
+        <strong className="font-medium text-ink">Adding another book:</strong> open{" "}
+        <span className="font-medium text-ink">Products</span> →{" "}
+        <span className="font-medium text-ink">+ Add</span> → give it a unique{" "}
+        <span className="font-medium text-ink">Id</span> (e.g.{" "}
+        <code className="text-[12px]">second-book</code>) → check{" "}
+        <span className="font-medium text-ink">Featured</span> on only one product.
+        Store-wide shipping lives under <span className="font-medium text-ink">Commerce</span>.
+      </div>
       <ContentEditor initial={site} assets={assets} />
     </div>
   );

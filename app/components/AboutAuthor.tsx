@@ -29,7 +29,10 @@ export default async function AboutAuthor() {
               {a.eyebrow}
             </span>
             <span className="inline-flex items-center bg-ink px-[8px] py-[5px] font-display text-[12px] font-medium leading-none text-paper">
-              {site.product.author}
+              {(
+                site.products.find((p) => p.featured) ??
+                site.products[0]
+              )?.author ?? site.brand.siteName}
             </span>
           </div>
 

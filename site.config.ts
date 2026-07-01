@@ -5,24 +5,32 @@
  * version (merged over these defaults). Prices are in CENTS — the server (the
  * Stripe PaymentIntent route) is the only pricing authority.
  *
- * Slices that the product owns (book identity, description, price, cover) live
- * under `product`. Section labels + section-specific copy live under `copy`.
- * Hero byline/sub and the author name chip are DERIVED from `product` in the
- * components, so they are not duplicated here.
+ * Book identity, description, price, and cover live under `products[]`.
+ * Store-wide shipping/tax/currency live under `commerce`. Section labels +
+ * section-specific copy live under `copy`. Hero byline/sub and the author
+ * name chip are DERIVED from the featured product in the components.
  */
 
 export type NavLink = { href: string; label: string };
 export type SocialLink = { label: string; href: string };
 
-export type ProductContent = {
-  title: string;
-  author: string;
-  format: string;
-  priceCents: number;
+/** Store-wide checkout settings (shipping, tax, currency). */
+export type CommerceContent = {
   currency: string;
   shipFlatCents: number;
   freeShipThresholdCents: number;
   taxRate: number;
+};
+
+export type ProductContent = {
+  /** Stable slug for cart, checkout, and order_items (e.g. "52-laws-of-you"). */
+  id: string;
+  /** Exactly one product should be featured — drives hero, quote, newsletter. */
+  featured: boolean;
+  title: string;
+  author: string;
+  format: string;
+  priceCents: number;
   maxQty: number;
   coverImage: string;
   coverAlt: string;
@@ -31,6 +39,24 @@ export type ProductContent = {
   shortDescription: string;
   longDescription: string[];
   tags: string[];
+};
+
+/** Blank row shape for the admin "+ Add product" button (not a live catalog entry). */
+export const PRODUCT_TEMPLATE: ProductContent = {
+  id: "",
+  featured: true,
+  title: "",
+  author: "",
+  format: "Paperback",
+  priceCents: 0,
+  maxQty: 99,
+  coverImage: "",
+  coverAlt: "",
+  hoverVideo: "",
+  tagline: "",
+  shortDescription: "",
+  longDescription: [""],
+  tags: [""],
 };
 
 export type SiteConfig = {
@@ -49,7 +75,8 @@ export type SiteConfig = {
     logo: string;
     logoAlt: string;
   };
-  product: ProductContent;
+  commerce: CommerceContent;
+  products: ProductContent[];
   nav: NavLink[];
   footer: { links: NavLink[] };
   social: SocialLink[];
@@ -182,31 +209,17 @@ export const site: SiteConfig = {
     logoAlt: "We Pray to Flourish",
   },
 
-  product: {
-    title: "52 Laws of You",
-    author: "Yaadin",
-    format: "Paperback",
-    priceCents: 2400,
+  commerce: {
     currency: "usd",
     shipFlatCents: 500,
     freeShipThresholdCents: 4000,
     taxRate: 0,
-    maxQty: 99,
-    coverImage: "/book.png",
-    coverAlt: "52 Laws of You, hardcover edition",
-    hoverVideo: "/book-hover.mp4",
-    tagline: "52 Laws of You",
-    shortDescription:
-      "52 Laws of You is the book Yaadin has ushered in: a weekly practice in becoming, for anyone learning to speak less, notice more, and flourish.",
-    longDescription: [
-      "52 Laws of You is a year-long practice in self-mastery. Each week offers a single law to read, sit with, and live. Small enough to begin today, deep enough to return to for a lifetime.",
-      "Drawn from faith, observation, and the wisdom of community, it asks one question on every page: who are you becoming when no one is watching?",
-    ],
-    tags: ["#observe", "#restrain", "#flourish"],
   },
 
+  products: [],
+
   nav: [
-    { href: "#book", label: "The Book" },
+    { href: "#book", label: "Books" },
     { href: "#author", label: "The Author" },
     { href: "#art", label: "Art" },
     { href: "#chapter", label: "Newsletter" },
@@ -214,7 +227,7 @@ export const site: SiteConfig = {
 
   footer: {
     links: [
-      { href: "#book", label: "The Book" },
+      { href: "#book", label: "Books" },
       { href: "#author", label: "The Author" },
       { href: "#chapter", label: "Free Chapter" },
     ],
@@ -253,7 +266,7 @@ export const site: SiteConfig = {
       attribution: "Law 12 · 52 Laws of You",
     },
     aboutBook: {
-      eyebrow: "The book",
+      eyebrow: "The books",
       headline: "Fifty-two laws. One year of becoming.",
       metaLine: "A weekly practice · 52 chapters",
       ctaLabel: "Read the first law",

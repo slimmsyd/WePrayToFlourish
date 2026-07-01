@@ -1,18 +1,27 @@
 import Link from "next/link";
-import { getContentUpdatedAt, getProductContent } from "@/lib/content";
+import { getContentUpdatedAt, getSiteContent } from "@/lib/content";
 import { getOrderCount } from "@/lib/orders";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminDashboard() {
-  const [product, updatedAt, orderCount] = await Promise.all([
-    getProductContent(),
+  const [site, updatedAt, orderCount] = await Promise.all([
+    getSiteContent(),
     getContentUpdatedAt(),
     getOrderCount(),
   ]);
 
   const cardClass =
     "flex flex-col gap-[10px] rounded-[10px] bg-panel p-[clamp(22px,3vw,30px)] transition-colors hover:bg-[#e9e2d3]";
+
+  const productSummary =
+    site.products.length === 0
+      ? "No products yet — add in editor"
+      : site.products.length === 1
+        ? `${site.products[0].title} · $${(site.products[0].priceCents / 100).toFixed(2)}`
+        : `${site.products.length} products · from $${(
+            Math.min(...site.products.map((p) => p.priceCents)) / 100
+          ).toFixed(2)}`;
 
   return (
     <div className="flex flex-col gap-[clamp(24px,4vw,36px)]">
@@ -28,9 +37,20 @@ export default async function AdminDashboard() {
       <div className="grid grid-cols-1 gap-[18px] sm:grid-cols-2">
         <Link href="/admin/content" className={cardClass}>
           <span className="font-display text-[19px] tracking-[-0.01em]">Content &amp; pricing</span>
-          <span className="text-[14px] text-ink-soft">
-            {product.title} · ${(product.priceCents / 100).toFixed(2)}
-          </span>
+          <span className="text-[14px] text-ink-soft">{productSummary}</span>
+          <ul className="m-0 list-none p-0 text-[12px] text-muted">
+            {site.products.map((p) => (
+              <li key={p.id} className="flex items-center gap-[6px]">
+                <span className="text-ink-soft">{p.title}</span>
+                {p.featured && (
+                  <span className="rounded-full bg-gold/15 px-[7px] py-[2px] text-[10px] uppercase tracking-[0.08em] text-gold">
+                    Featured
+                  </span>
+                )}
+                <span>· ${(p.priceCents / 100).toFixed(2)}</span>
+              </li>
+            ))}
+          </ul>
           <span className="mt-[4px] text-[12px] text-muted">
             {updatedAt ? `Last edited ${updatedAt.toLocaleString()}` : "Using defaults"}
           </span>

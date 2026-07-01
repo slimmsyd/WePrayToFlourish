@@ -39,7 +39,7 @@ if (!stripeKey.startsWith("sk_test_")) {
 }
 
 const stripe = new Stripe(stripeKey);
-const qty = 1;
+const lines = [{ productId: "52-laws-of-you", qty: 1 }];
 const customer = {
   email,
   name: "Test Customer",
@@ -52,7 +52,7 @@ const customer = {
 console.log("→ Test purchase (Stripe test mode)");
 console.log(`  API: ${base}`);
 console.log(`  Customer: ${customer.name} <${customer.email}>`);
-console.log(`  Qty: ${qty}`);
+console.log(`  Lines: ${JSON.stringify(lines)}`);
 console.log("  Card: pm_card_visa (4242 4242 4242 4242)");
 
 async function api(path, body) {
@@ -78,7 +78,7 @@ async function api(path, body) {
 }
 
 // 1. Create PaymentIntent (server-side pricing + metadata)
-const intentData = await api("/api/checkout/intent", { qty, customer });
+const intentData = await api("/api/checkout/intent", { lines, customer });
 const { paymentIntentId, breakdown } = intentData;
 console.log(`✓ PaymentIntent created: ${paymentIntentId}`);
 console.log(`  Total: $${(breakdown.total).toFixed(2)} ${breakdown.currency}`);

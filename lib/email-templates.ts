@@ -60,8 +60,36 @@ function formatShippingBlock(opts: {
   return lines.length ? lines.join("\n") : "—";
 }
 
-function orderLineItemsHtml(opts: {
+export type OrderEmailLineItem = {
+  title: string;
+  format: string;
+  author: string;
   qty: number;
+  lineSubtotalCents: number;
+};
+
+function orderProductsHtml(items: OrderEmailLineItem[]) {
+  return items
+    .map(
+      (item) => `
+    <p style="margin:0 0 12px;padding:14px 16px;background:#f6f2ea;border-radius:8px;font-size:15px;line-height:1.55;">
+      <strong style="color:#1a1714;">${escapeHtml(item.title)}</strong><br />
+      <span style="color:#4a443c;">${escapeHtml(item.format)} · by ${escapeHtml(item.author)} · × ${item.qty}</span>
+    </p>`,
+    )
+    .join("");
+}
+
+function orderProductsText(items: OrderEmailLineItem[]) {
+  return items
+    .map(
+      (item) =>
+        `${item.title} (${item.format}) by ${item.author} × ${item.qty} — ${fmtMoney(item.lineSubtotalCents)}`,
+    )
+    .join("\n");
+}
+
+function orderTotalsHtml(opts: {
   subtotalCents: number;
   shippingCents: number;
   taxCents: number;
@@ -73,12 +101,10 @@ function orderLineItemsHtml(opts: {
     opts.shippingCents === 0 ? "Free" : fmtMoney(opts.shippingCents, opts.currency);
   const tax = fmtMoney(opts.taxCents, opts.currency);
   const total = fmtMoney(opts.totalCents, opts.currency);
-  const taxRow =
-    opts.taxCents > 0 ? detailRow("Tax", tax) : "";
+  const taxRow = opts.taxCents > 0 ? detailRow("Tax", tax) : "";
 
   return `
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 20px;border-top:1px solid rgba(26,23,20,0.1);">
-      ${detailRow("Quantity", String(opts.qty))}
       ${detailRow("Subtotal", subtotal)}
       ${detailRow("Shipping", shipping)}
       ${taxRow}
@@ -87,8 +113,7 @@ function orderLineItemsHtml(opts: {
   `;
 }
 
-function orderLineItemsText(opts: {
-  qty: number;
+function orderTotalsText(opts: {
   subtotalCents: number;
   shippingCents: number;
   taxCents: number;
@@ -96,7 +121,6 @@ function orderLineItemsText(opts: {
   currency: string;
 }) {
   const lines = [
-    `Quantity: ${opts.qty}`,
     `Subtotal: ${fmtMoney(opts.subtotalCents, opts.currency)}`,
     `Shipping: ${opts.shippingCents === 0 ? "Free" : fmtMoney(opts.shippingCents, opts.currency)}`,
   ];
@@ -115,10 +139,7 @@ export function orderConfirmationEmail(opts: {
   footer: string;
   customerName: string;
   customerEmail: string;
-  productTitle: string;
-  productAuthor: string;
-  productFormat: string;
-  qty: number;
+  lineItems: OrderEmailLineItem[];
   subtotalCents: number;
   shippingCents: number;
   taxCents: number;
@@ -144,11 +165,8 @@ export function orderConfirmationEmail(opts: {
     <p style="margin:0 0 18px;font-size:24px;line-height:1.2;color:#1a1714;">${escapeHtml(opts.headline)}</p>
     <p style="margin:0 0 8px;font-size:15px;color:#4a443c;">Hi ${escapeHtml(opts.customerName)},</p>
     ${paragraphsHtml(opts.body)}
-    <p style="margin:0 0 20px;padding:16px 18px;background:#f6f2ea;border-radius:8px;font-size:15px;line-height:1.55;">
-      <strong style="color:#1a1714;">${escapeHtml(opts.productTitle)}</strong><br />
-      <span style="color:#4a443c;">${escapeHtml(opts.productFormat)} · by ${escapeHtml(opts.productAuthor)}</span>
-    </p>
-    ${orderLineItemsHtml(opts)}
+    ${orderProductsHtml(opts.lineItems)}
+    ${orderTotalsHtml(opts)}
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 20px;border-top:1px solid rgba(26,23,20,0.1);">
       ${detailRow("Order", `#${opts.orderId}`)}
       ${detailRow("Date", opts.orderedAt)}
@@ -162,8 +180,13 @@ export function orderConfirmationEmail(opts: {
     <p style="margin:0;font-size:13px;line-height:1.55;color:#4a443c;">${escapeHtml(opts.footer)}</p>
   `;
 
+  const summaryLabel =
+    opts.lineItems.length === 1
+      ? opts.lineItems[0].title
+      : `${opts.lineItems.length} items`;
+
   return {
-    subject: `${opts.subject} — ${opts.productTitle}`,
+    subject: `${opts.subject} — ${summaryLabel}`,
     html: layout(opts.subject, body),
     text: [
       opts.headline,
@@ -172,9 +195,9 @@ export function orderConfirmationEmail(opts: {
       "",
       opts.body,
       "",
-      `${opts.productTitle} (${opts.productFormat}) by ${opts.productAuthor}`,
+      orderProductsText(opts.lineItems),
       "",
-      orderLineItemsText(opts),
+      orderTotalsText(opts),
       "",
       `Order #${opts.orderId}`,
       `Date: ${opts.orderedAt}`,
@@ -198,10 +221,7 @@ export function orderAdminEmail(opts: {
   body: string;
   customerName: string;
   customerEmail: string;
-  productTitle: string;
-  productAuthor: string;
-  productFormat: string;
-  qty: number;
+  lineItems: OrderEmailLineItem[];
   subtotalCents: number;
   shippingCents: number;
   taxCents: number;
@@ -227,11 +247,8 @@ export function orderAdminEmail(opts: {
     <p style="margin:0 0 10px;font-size:12px;letter-spacing:0.22em;text-transform:uppercase;color:#9c7b4d;">Admin alert</p>
     <p style="margin:0 0 18px;font-size:24px;line-height:1.2;color:#1a1714;">${escapeHtml(opts.headline)}</p>
     <p style="margin:0 0 20px;">${escapeHtml(opts.body)}</p>
-    <p style="margin:0 0 20px;padding:16px 18px;background:#f6f2ea;border-radius:8px;font-size:15px;line-height:1.55;">
-      <strong style="color:#1a1714;">${escapeHtml(opts.productTitle)}</strong><br />
-      <span style="color:#4a443c;">${escapeHtml(opts.productFormat)} · by ${escapeHtml(opts.productAuthor)} · × ${opts.qty}</span>
-    </p>
-    ${orderLineItemsHtml(opts)}
+    ${orderProductsHtml(opts.lineItems)}
+    ${orderTotalsHtml(opts)}
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 20px;border-top:1px solid rgba(26,23,20,0.1);">
       ${detailRow("Customer", opts.customerName)}
       ${detailRow("Email", opts.customerEmail)}
@@ -248,17 +265,22 @@ export function orderAdminEmail(opts: {
 
   const total = fmtMoney(opts.totalCents, opts.currency);
 
+  const summaryLabel =
+    opts.lineItems.length === 1
+      ? opts.lineItems[0].title
+      : `${opts.lineItems.length} items`;
+
   return {
-    subject: `${opts.subject} — ${opts.productTitle} (${total})`,
+    subject: `${opts.subject} — ${summaryLabel} (${total})`,
     html: layout(opts.headline, body),
     text: [
       opts.headline,
       "",
       opts.body,
       "",
-      `${opts.productTitle} (${opts.productFormat}) by ${opts.productAuthor} × ${opts.qty}`,
+      orderProductsText(opts.lineItems),
       "",
-      orderLineItemsText(opts),
+      orderTotalsText(opts),
       "",
       `Customer: ${opts.customerName}`,
       `Email: ${opts.customerEmail}`,

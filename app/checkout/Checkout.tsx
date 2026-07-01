@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Elements,
   PaymentElement,
@@ -11,7 +11,7 @@ import {
 import type { Appearance } from "@stripe/stripe-js";
 import { useCart } from "../cart/CartContext";
 import { getStripe } from "@/lib/stripe-client";
-import { priceFor, pricingFrom } from "@/lib/pricing";
+import { priceForCart, type CartLine } from "@/lib/pricing";
 import { useSiteContent } from "@/lib/site-content";
 import type { ProductContent, SiteContent } from "@/lib/content";
 
@@ -26,7 +26,6 @@ const labelClass =
 const legendClass =
   "mb-[4px] p-0 font-display text-[13px] uppercase tracking-[0.22em] text-ink";
 
-// Theme the embedded Stripe Payment Element to match the site palette.
 const appearance: Appearance = {
   theme: "stripe",
   variables: {
@@ -52,17 +51,49 @@ const appearance: Appearance = {
 
 const stripePromise = getStripe();
 
+function activeLines(
+  cartLines: CartLine[],
+  featured: ProductContent | null,
+  done: boolean,
+  orderedLines: CartLine[],
+): CartLine[] {
+  if (done && orderedLines.length > 0) return orderedLines;
+  if (cartLines.length > 0) return cartLines;
+  if (!featured) return [];
+  return [{ productId: featured.id, qty: 1 }];
+}
+
 export default function Checkout() {
   const site = useSiteContent();
-  const product = site.product;
-  const { qty } = useCart();
+  const featured =
+    site.products.find((p) => p.featured) ?? site.products[0] ?? null;
+  const { lines: cartLines } = useCart();
+
+  if (site.products.length === 0) {
+    return (
+      <div className="min-h-screen bg-paper px-[clamp(20px,4vw,56px)] py-[80px] font-body text-ink">
+        <p className="mx-auto max-w-[50ch] text-[17px] leading-[1.6] text-ink-soft">
+          No books are available for purchase yet. Check back soon.
+        </p>
+        <Link
+          href="/"
+          className="mx-auto mt-[20px] inline-block border-b-[1.5px] border-gold pb-[3px] text-[15px] font-semibold text-ink"
+        >
+          Return to the site &rarr;
+        </Link>
+      </div>
+    );
+  }
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [paymentIntentId, setPaymentIntentId] = useState<string | null>(null);
   const [initError, setInitError] = useState<string | null>(null);
   const created = useRef(false);
 
-  // Create the PaymentIntent once on mount. Amount is recomputed server-side
-  // again at submit time, so the initial qty here is just a starting point.
+  const initialLines = useMemo(
+    () => activeLines(cartLines, featured, false, []),
+    [cartLines, featured],
+  );
+
   useEffect(() => {
     if (created.current) return;
     created.current = true;
@@ -71,22 +102,22 @@ export default function Checkout() {
         const res = await fetch("/api/checkout/intent", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ qty: Math.max(1, qty) }),
+          body: JSON.stringify({ lines: initialLines }),
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || "Could not start checkout");
         setClientSecret(data.clientSecret);
         setPaymentIntentId(data.paymentIntentId);
       } catch (err) {
-        setInitError(err instanceof Error ? err.message : "Could not start checkout");
+        setInitError(
+          err instanceof Error ? err.message : "Could not start checkout",
+        );
       }
     })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [initialLines]);
 
   return (
     <div className="min-h-screen bg-paper font-body text-ink antialiased">
-      {/* HEADER */}
       <div className="border-b border-ink/10 bg-white">
         <div className="mx-auto flex max-w-[1180px] items-center justify-between gap-5 px-[clamp(20px,4vw,56px)] py-[13px]">
           <Link href="/" className="flex shrink-0 items-center">
@@ -106,7 +137,6 @@ export default function Checkout() {
         </div>
       </div>
 
-      {/* TITLE STRIP */}
       <div className="mx-auto flex max-w-[1180px] flex-col gap-[10px] px-[clamp(20px,4vw,56px)] pb-[clamp(20px,3vw,28px)] pt-[clamp(32px,5vw,56px)]">
         <span className="font-display text-[12px] uppercase tracking-[0.34em] text-gold">
           Checkout
@@ -130,7 +160,9 @@ export default function Checkout() {
         <Elements stripe={stripePromise} options={{ clientSecret, appearance }}>
           <CheckoutBody
             paymentIntentId={paymentIntentId!}
-            product={product}
+            products={site.products}
+            commerce={site.commerce}
+            featured={featured}
             checkout={site.copy.checkout}
           />
         </Elements>
@@ -141,33 +173,42 @@ export default function Checkout() {
 
 function CheckoutBody({
   paymentIntentId,
-  product,
+  products,
+  commerce,
+  featured,
   checkout,
 }: {
   paymentIntentId: string;
-  product: ProductContent;
+  products: ProductContent[];
+  commerce: SiteContent["commerce"];
+  featured: ProductContent | null;
   checkout: CheckoutCopy;
 }) {
   const stripe = useStripe();
   const elements = useElements();
-  const { qty, setQty, clear } = useCart();
+  const { lines: cartLines, setQty, clear } = useCart();
 
   const [done, setDone] = useState(false);
-  const [orderedQty, setOrderedQty] = useState(0);
+  const [orderedLines, setOrderedLines] = useState<CartLine[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [payError, setPayError] = useState<string | null>(null);
 
-  // Reaching checkout with an empty cart starts a single-copy order.
-  useEffect(() => {
-    if (!done && qty < 1) setQty(1);
-  }, [done, qty, setQty]);
+  const lines = activeLines(cartLines, featured, done, orderedLines);
+  const price = priceForCart(lines, products, commerce);
+  const freeShipAt = commerce.freeShipThresholdCents / 100;
 
-  const activeQty = done ? orderedQty : Math.max(1, qty);
-  const price = priceFor(activeQty, pricingFrom(product));
-  const freeShipAt = product.freeShipThresholdCents / 100;
+  const productById = useMemo(
+    () => new Map(products.map((p) => [p.id, p])),
+    [products],
+  );
 
-  const inc = () => setQty(Math.min(Math.max(1, qty) + 1, product.maxQty));
-  const dec = () => setQty(Math.max(Math.max(1, qty) - 1, 1));
+  const changeQty = (productId: string, delta: number) => {
+    const line = lines.find((l) => l.productId === productId);
+    const product = productById.get(productId);
+    if (!product || !line) return;
+    const next = Math.max(1, Math.min(product.maxQty, line.qty + delta));
+    setQty(productId, next);
+  };
 
   const onSubmit = useCallback(
     async (e: React.FormEvent<HTMLFormElement>) => {
@@ -187,22 +228,22 @@ function CheckoutBody({
         postalCode: String(fd.get("postal") || ""),
         country: String(fd.get("country") || ""),
       };
-      const chosenQty = Math.max(1, qty);
+      const chosenLines = activeLines(cartLines, featured, false, []);
 
       try {
-        // Lock in the authoritative amount + attach customer details to the
-        // existing intent (server recomputes the amount from qty). The client
-        // secret is unchanged — Elements already holds it — so confirmPayment
-        // picks up the updated amount automatically.
         const intentRes = await fetch("/api/checkout/intent", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ qty: chosenQty, paymentIntentId, customer }),
+          body: JSON.stringify({
+            lines: chosenLines,
+            paymentIntentId,
+            customer,
+          }),
         });
         const intentData = await intentRes.json();
-        if (!intentRes.ok) throw new Error(intentData.error || "Could not update order");
+        if (!intentRes.ok)
+          throw new Error(intentData.error || "Could not update order");
 
-        // Confirm the payment. redirect:"if_required" keeps card payments inline.
         const { error, paymentIntent } = await stripe.confirmPayment({
           elements,
           confirmParams: {
@@ -219,7 +260,6 @@ function CheckoutBody({
         }
 
         if (paymentIntent && paymentIntent.status === "succeeded") {
-          // Persist the order now (idempotent; webhook is the prod backstop).
           await fetch("/api/checkout/order", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -227,7 +267,7 @@ function CheckoutBody({
           }).catch(() => {});
 
           form.reset();
-          setOrderedQty(chosenQty);
+          setOrderedLines(chosenLines);
           setDone(true);
           clear();
           window.scrollTo({ top: 0, behavior: "smooth" });
@@ -237,23 +277,23 @@ function CheckoutBody({
           );
         }
       } catch (err) {
-        setPayError(err instanceof Error ? err.message : "Something went wrong.");
+        setPayError(
+          err instanceof Error ? err.message : "Something went wrong.",
+        );
       } finally {
         setSubmitting(false);
       }
     },
-    [stripe, elements, submitting, qty, paymentIntentId, clear],
+    [stripe, elements, submitting, cartLines, featured, paymentIntentId, clear],
   );
 
   return (
     <div className="mx-auto grid max-w-[1180px] grid-cols-1 items-start gap-[clamp(32px,5vw,72px)] px-[clamp(20px,4vw,56px)] pb-[clamp(60px,9vh,110px)] md:grid-cols-[repeat(auto-fit,minmax(320px,1fr))]">
-      {/* LEFT: form or confirmation */}
       {!done ? (
         <form
           onSubmit={onSubmit}
           className="order-1 flex flex-col gap-[clamp(28px,4vw,40px)]"
         >
-          {/* 1 - Contact */}
           <fieldset className="m-0 flex flex-col gap-[16px] border-none p-0">
             <legend className={legendClass}>1 &middot; Contact</legend>
             <label className={labelClass}>
@@ -278,7 +318,6 @@ function CheckoutBody({
             </label>
           </fieldset>
 
-          {/* 2 - Shipping */}
           <fieldset className="m-0 flex flex-col gap-[16px] border-none p-0">
             <legend className={legendClass}>2 &middot; Shipping address</legend>
             <label className={labelClass}>
@@ -325,7 +364,6 @@ function CheckoutBody({
             </label>
           </fieldset>
 
-          {/* 3 - Payment (Stripe Payment Element) */}
           <fieldset className="m-0 flex flex-col gap-[16px] border-none p-0">
             <legend className={legendClass}>3 &middot; Payment</legend>
             <PaymentElement options={{ layout: "tabs" }} />
@@ -390,59 +428,72 @@ function CheckoutBody({
         </div>
       )}
 
-      {/* RIGHT: order summary */}
       <aside className="order-2 flex flex-col gap-[24px] rounded-[6px] bg-panel p-[clamp(26px,3vw,36px)] md:sticky md:top-[24px]">
         <span className="font-display text-[12px] uppercase tracking-[0.28em] text-gold">
           Order summary
         </span>
-        <div className="flex items-start gap-[18px]">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={product.coverImage}
-            alt={product.title}
-            className="w-[88px] shrink-0 self-start object-contain"
-          />
-          <div className="flex flex-col gap-[6px]">
-            <span className="font-display text-[19px] leading-[1.1] tracking-[-0.01em]">
-              {product.title}
-            </span>
-            <span className="text-[13px] tracking-[0.04em] text-muted">
-              {product.format} &middot; by {product.author}
-            </span>
-            <span className="text-[13px] text-ink-soft">
-              {checkout.summaryItemNote}
-            </span>
-          </div>
-        </div>
 
-        {/* qty */}
-        <div className="flex items-center justify-between pt-[4px]">
-          <span className="text-[15px] text-ink-soft">Quantity</span>
-          {!done ? (
-            <div className="flex items-center overflow-hidden rounded-full border border-ink/20">
-              <button
-                type="button"
-                onClick={dec}
-                aria-label="Decrease"
-                className="h-[38px] w-[38px] cursor-pointer border-none bg-transparent text-[20px] leading-none text-ink transition-colors hover:bg-ink/[0.06]"
-              >
-                &minus;
-              </button>
-              <span className="min-w-[32px] text-center text-[16px] font-semibold">
-                {activeQty}
-              </span>
-              <button
-                type="button"
-                onClick={inc}
-                aria-label="Increase"
-                className="h-[38px] w-[38px] cursor-pointer border-none bg-transparent text-[20px] leading-none text-ink transition-colors hover:bg-ink/[0.06]"
-              >
-                +
-              </button>
-            </div>
-          ) : (
-            <span className="text-[16px] font-semibold">{activeQty}</span>
-          )}
+        <div className="flex flex-col gap-[20px]">
+          {price.lines.map((line) => {
+            const product = productById.get(line.productId);
+            if (!product) return null;
+            return (
+              <div key={line.productId} className="flex items-start gap-[18px]">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={product.coverImage}
+                  alt={product.title}
+                  className="w-[72px] shrink-0 self-start object-contain"
+                />
+                <div className="flex flex-1 flex-col gap-[8px]">
+                  <div className="flex flex-col gap-[4px]">
+                    <span className="font-display text-[17px] leading-[1.1] tracking-[-0.01em]">
+                      {product.title}
+                    </span>
+                    <span className="text-[12px] tracking-[0.04em] text-muted">
+                      {product.format} &middot; by {product.author}
+                    </span>
+                    <span className="text-[12px] text-ink-soft">
+                      {checkout.summaryItemNote}
+                    </span>
+                  </div>
+                  {!done ? (
+                    <div className="flex items-center justify-between">
+                      <span className="text-[13px] text-ink-soft">Qty</span>
+                      <div className="flex items-center overflow-hidden rounded-full border border-ink/20">
+                        <button
+                          type="button"
+                          onClick={() => changeQty(line.productId, -1)}
+                          aria-label={`Decrease ${product.title}`}
+                          className="h-[34px] w-[34px] cursor-pointer border-none bg-transparent text-[18px] leading-none text-ink transition-colors hover:bg-ink/[0.06]"
+                        >
+                          &minus;
+                        </button>
+                        <span className="min-w-[28px] text-center text-[15px] font-semibold">
+                          {line.qty}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => changeQty(line.productId, 1)}
+                          aria-label={`Increase ${product.title}`}
+                          className="h-[34px] w-[34px] cursor-pointer border-none bg-transparent text-[18px] leading-none text-ink transition-colors hover:bg-ink/[0.06]"
+                        >
+                          +
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <span className="text-[13px] text-ink-soft">
+                      Qty {line.qty}
+                    </span>
+                  )}
+                  <span className="text-[14px] font-medium text-ink">
+                    {fmt(line.lineSubtotalCents / 100)}
+                  </span>
+                </div>
+              </div>
+            );
+          })}
         </div>
 
         <div className="h-px bg-ink/[0.12]" />
