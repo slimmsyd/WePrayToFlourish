@@ -104,8 +104,8 @@ function normalizeSiteContent(
     next = { ...next, commerce, products: [product] };
   }
 
-  if (!next.products) {
-    next = { ...next, products: [] };
+  if (!next.products?.length) {
+    next = { ...next, products: site.products };
   }
   if (!next.commerce) {
     next = { ...next, commerce: site.commerce };

@@ -65,7 +65,6 @@ const SITE_CONTENT_DDL = `
   );
 `;
 
-/** Empty catalog — products are added via the admin CRM. */
 const DEFAULT_CONTENT = {
   commerce: {
     currency: "usd",
@@ -73,7 +72,28 @@ const DEFAULT_CONTENT = {
     freeShipThresholdCents: 4000,
     taxRate: 0,
   },
-  products: [],
+  products: [
+    {
+      id: "52-laws-of-you",
+      featured: true,
+      title: "52 Laws of You",
+      author: "Yaadin",
+      format: "Paperback",
+      priceCents: 2400,
+      maxQty: 99,
+      coverImage: "/book.png",
+      coverAlt: "52 Laws of You, hardcover edition",
+      hoverVideo: "/book-hover.mp4",
+      tagline: "52 Laws of You",
+      shortDescription:
+        "52 Laws of You is the book Yaadin has ushered in: a weekly practice in becoming, for anyone learning to speak less, notice more, and flourish.",
+      longDescription: [
+        "52 Laws of You is a year-long practice in self-mastery. Each week offers a single law to read, sit with, and live. Small enough to begin today, deep enough to return to for a lifetime.",
+        "Drawn from faith, observation, and the wisdom of community, it asks one question on every page: who are you becoming when no one is watching?",
+      ],
+      tags: ["#observe", "#restrain", "#flourish"],
+    },
+  ],
 };
 
 try {
