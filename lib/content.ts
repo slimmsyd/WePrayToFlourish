@@ -112,7 +112,7 @@ function normalizeSiteContent(
   }
 
   if (next.products.length === 0) {
-    return next;
+    return sanitizeSeoTitles(next);
   }
 
   const products = next.products.map((p, i) => ({
@@ -125,7 +125,23 @@ function normalizeSiteContent(
     featured: featuredIdx >= 0 ? i === featuredIdx : i === 0,
   }));
 
-  return { ...next, products: normalizedProducts };
+  return sanitizeSeoTitles({ ...next, products: normalizedProducts });
+}
+
+/** Strip em dashes from SEO title fields (legacy CMS values used — as a separator). */
+function sanitizeSeoTitles(content: SiteContent): SiteContent {
+  const stripEmDash = (value: string) =>
+    value.replace(/\s*—\s*/g, " ~ ").replace(/\s+/g, " ").trim();
+
+  const { seo } = content;
+  return {
+    ...content,
+    seo: {
+      ...seo,
+      title: stripEmDash(seo.title),
+      ogTitle: seo.ogTitle.includes("—") ? site.seo.ogTitle : stripEmDash(seo.ogTitle),
+    },
+  };
 }
 
 /**

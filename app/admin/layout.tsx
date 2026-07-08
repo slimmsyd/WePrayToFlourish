@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Admin — We Pray to Flourish",
+  title: "Admin ~ We Pray to Flourish",
   robots: { index: false, follow: false },
 };
 
