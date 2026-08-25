@@ -1,14 +1,13 @@
 import { readdirSync, type Dirent } from "node:fs";
 import path from "node:path";
 import { getSiteContent } from "@/lib/content";
-import ContentEditor from "./ContentEditor";
+import EditorShell from "./EditorShell";
 
 export const dynamic = "force-dynamic";
 
 const IMG = /\.(png|jpe?g|webp|gif|svg|avif)$/i;
 const VID = /\.(mp4|webm|mov)$/i;
 
-// Shallow scan of /public for pickable media (one level into folders).
 function listPublicAssets(): { images: string[]; videos: string[] } {
   const root = path.join(process.cwd(), "public");
   const images: string[] = [];
@@ -36,30 +35,24 @@ function listPublicAssets(): { images: string[]; videos: string[] } {
 export default async function AdminContentPage() {
   const site = await getSiteContent();
   const assets = listPublicAssets();
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 
   return (
-    <div className="flex flex-col gap-[clamp(20px,4vw,32px)]">
+    <div className="flex flex-col gap-[clamp(16px,3vw,24px)]">
       <div className="flex flex-col gap-[6px]">
-        <span className="font-display text-[12px] uppercase tracking-[0.34em] text-gold">Content</span>
+        <span className="font-display text-[12px] uppercase tracking-[0.34em] text-gold">
+          Content
+        </span>
         <h1 className="m-0 font-display text-[clamp(26px,3.4vw,40px)] font-normal leading-[1.05] tracking-[-0.02em]">
           Edit your site
         </h1>
         <p className="m-0 max-w-[60ch] text-[14px] text-ink-soft">
-          Every field on the site, editable. Changes publish on save. Prices are in
-          dollars; the server charges exactly what you set here.
+          Pick a section, make your changes, then publish. Prices are in dollars — the
+          server charges exactly what you set.
         </p>
       </div>
 
-      <div className="rounded-[10px] border border-gold/30 bg-gold/[0.06] px-[18px] py-[14px] text-[13px] leading-[1.55] text-ink-soft">
-        <strong className="font-medium text-ink">Adding another book:</strong> open{" "}
-        <span className="font-medium text-ink">Products</span> →{" "}
-        <span className="font-medium text-ink">+ Add</span> → give it a unique{" "}
-        <span className="font-medium text-ink">Id</span> (e.g.{" "}
-        <code className="text-[12px]">second-book</code>) → check{" "}
-        <span className="font-medium text-ink">Featured</span> on only one product.
-        Store-wide shipping lives under <span className="font-medium text-ink">Commerce</span>.
-      </div>
-      <ContentEditor initial={site} assets={assets} />
+      <EditorShell initial={site} assets={assets} siteUrl={siteUrl} />
     </div>
   );
 }
