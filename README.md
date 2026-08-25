@@ -15,7 +15,7 @@ project map, and reusing this as a template.
 npm install
 cp .env.example .env.local           # then fill in the values (see the guide)
 node --env-file=.env.local scripts/db-init.mjs   # create + seed tables
-npm run dev                          # http://localhost:3000
+npm run dev                          # http://localhost:3000 (Webpack bundler)
 ```
 
 Admin CRM: **http://localhost:3000/admin/login** (password = your `ADMIN_PASSWORD`).

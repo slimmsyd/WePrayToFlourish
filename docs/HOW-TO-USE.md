@@ -53,6 +53,12 @@ node --env-file=.env.local scripts/db-init.mjs
 npm run dev      # http://localhost:3000
 ```
 
+> **Mac note:** The dev script uses Webpack (`next dev --webpack`) because Turbopack
+> requires native SWC bindings that may not install on every Mac setup. Always run
+> commands from the **WePrayToFlourish** project folder, not the parent
+> `Code_Projects` directory. If port 3000 is busy, stop the other process or set
+> `NEXT_PUBLIC_SITE_URL` to match the port Next prints (e.g. `http://localhost:3001`).
+
 ---
 
 ## 2. The admin CRM
