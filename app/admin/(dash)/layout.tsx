@@ -51,7 +51,7 @@ export default async function DashLayout({
           </div>
         </div>
       </header>
-      <main className="mx-auto max-w-[1100px] px-[clamp(20px,4vw,40px)] py-[clamp(32px,5vw,56px)]">
+      <main className="mx-auto max-w-[1500px] px-[clamp(20px,4vw,40px)] py-[clamp(32px,5vw,56px)]">
         {children}
       </main>
     </>

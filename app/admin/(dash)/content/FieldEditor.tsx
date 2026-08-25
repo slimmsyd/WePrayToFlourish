@@ -1,23 +1,27 @@
 "use client";
 
-import { Fragment, useId, useRef, useState } from "react";
+import { Fragment, useRef, useState } from "react";
 import { PRODUCT_TEMPLATE } from "@/site.config";
+import {
+  getAddLabel,
+  getFieldMeta,
+  humanize,
+  pathKey,
+  type Path,
+} from "./editor-schema";
 
 export type Assets = { images: string[]; videos: string[] };
 
-type Path = (string | number)[];
-
-// Image-ish fields get a live preview + drag-and-drop upload; videos keep the
-// path/picker only (encoding video as a data URL would be far too large).
 const IMAGE_KEY = /image|cover|logo|photo|slide|icon|avatar|thumb|art|banner/i;
-// "coverAlt"/"logoAlt"/"imageAlt" are alt TEXT, not image paths — keep them text.
 const isImageKey = (k: string) => IMAGE_KEY.test(k) && !/alt/i.test(k);
 
-/**
- * Read a dropped/selected image into a data URL. Raster images are downscaled
- * (max 1600px wide) and re-encoded so the stored string stays reasonable; SVGs
- * are kept as-is to preserve vector quality.
- */
+const ASSET_KEY = /image|cover|logo|video|photo|slide|src|icon/i;
+
+const inputClass =
+  "w-full rounded-[8px] border border-[rgba(26,23,20,0.22)] bg-paper px-[12px] py-[10px] font-body text-[14px] text-ink outline-none transition-colors duration-200 focus:border-gold focus-visible:ring-2 focus-visible:ring-gold/30";
+
+const labelClass = "flex flex-col gap-[6px]";
+
 function fileToDataUrl(file: File, maxW = 1600, quality = 0.82): Promise<string> {
   return new Promise((resolve, reject) => {
     if (file.type === "image/svg+xml") {
@@ -38,7 +42,6 @@ function fileToDataUrl(file: File, maxW = 1600, quality = 0.82): Promise<string>
       const ctx = canvas.getContext("2d");
       if (!ctx) return reject(new Error("Canvas unsupported"));
       ctx.drawImage(img, 0, 0, w, h);
-      // WebP keeps transparency (logos/PNGs) at a smaller size; else JPEG.
       const type =
         file.type === "image/png" || file.type === "image/webp"
           ? "image/webp"
@@ -51,26 +54,8 @@ function fileToDataUrl(file: File, maxW = 1600, quality = 0.82): Promise<string>
   });
 }
 
-// Humanize a key into a label: "freeShipThresholdCents" -> "Free Ship Threshold ($)".
-export function humanize(key: string): string {
-  if (typeof key !== "string") return String(key);
-  const isMoney = key.endsWith("Cents");
-  const base = key.replace(/Cents$/, "");
-  const words = base
-    .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
-    .replace(/[_-]/g, " ")
-    .trim();
-  const title = words.charAt(0).toUpperCase() + words.slice(1);
-  return isMoney ? `${title} ($)` : title;
-}
+export { humanize };
 
-const ASSET_KEY = /image|cover|logo|video|photo|slide|src|icon/i;
-
-const inputClass =
-  "w-full rounded-[8px] border border-[rgba(26,23,20,0.22)] bg-paper px-[12px] py-[9px] font-body text-[14px] text-ink outline-none transition-colors focus:border-gold";
-const labelClass = "flex flex-col gap-[5px] text-[12px] text-muted";
-
-/** A blank value matching the shape of `v` (for new array rows). */
 export function blankLike(v: unknown): unknown {
   if (Array.isArray(v)) return [];
   if (v && typeof v === "object") {
@@ -83,20 +68,120 @@ export function blankLike(v: unknown): unknown {
   return "";
 }
 
-/** Image field: live preview + drag-and-drop upload + path/picker fallback. */
+function FieldLabel({ path, children }: { path: Path; children?: React.ReactNode }) {
+  const meta = getFieldMeta(path);
+  return (
+    <div className={labelClass}>
+      <span className="text-[13px] font-medium text-ink">{meta.label}</span>
+      {meta.help && (
+        <span className="text-[12px] leading-[1.45] text-ink-soft">{meta.help}</span>
+      )}
+      {children}
+    </div>
+  );
+}
+
+function ToggleSwitch({
+  checked,
+  onChange,
+  label,
+  help,
+}: {
+  checked: boolean;
+  onChange: (v: boolean) => void;
+  label: string;
+  help?: string;
+}) {
+  return (
+    <div className="flex items-start justify-between gap-[12px] rounded-[8px] border border-ink/10 bg-paper/50 px-[14px] py-[12px] transition-colors duration-200 hover:border-ink/20">
+      <div className="flex flex-col gap-[4px]">
+        <span className="text-[14px] font-medium text-ink">{label}</span>
+        {help && <span className="text-[12px] leading-[1.45] text-ink-soft">{help}</span>}
+      </div>
+      <button
+        type="button"
+        role="switch"
+        aria-checked={checked}
+        aria-label={label}
+        onClick={() => onChange(!checked)}
+        className={`relative h-[26px] w-[46px] shrink-0 cursor-pointer rounded-full border-none transition-colors duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold motion-reduce:transition-none ${
+          checked ? "bg-gold" : "bg-ink/20"
+        }`}
+      >
+        <span
+          className={`absolute top-[3px] left-[3px] h-[20px] w-[20px] rounded-full bg-paper shadow-sm transition-transform duration-200 motion-reduce:transition-none ${
+            checked ? "translate-x-[20px]" : "translate-x-0"
+          }`}
+        />
+      </button>
+    </div>
+  );
+}
+
+function ImageGridPicker({
+  assets,
+  value,
+  onSelect,
+}: {
+  assets: Assets;
+  value: string;
+  onSelect: (path: string) => void;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const shown = expanded ? assets.images : assets.images.slice(0, 12);
+
+  if (assets.images.length === 0) return null;
+
+  return (
+    <div className="flex flex-col gap-[8px]">
+      <span className="text-[12px] text-muted">Choose from site images</span>
+      <div className="grid grid-cols-4 gap-[6px] sm:grid-cols-5">
+        {shown.map((img) => {
+          const selected = value === img;
+          return (
+            <button
+              key={img}
+              type="button"
+              onClick={() => onSelect(img)}
+              title={img}
+              className={`aspect-square cursor-pointer overflow-hidden rounded-[6px] border-2 bg-paper transition-colors duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-gold ${
+                selected ? "border-gold ring-2 ring-gold/30" : "border-ink/10 hover:border-gold/50"
+              }`}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={img} alt="" className="h-full w-full object-cover" />
+            </button>
+          );
+        })}
+      </div>
+      {assets.images.length > 12 && (
+        <button
+          type="button"
+          onClick={() => setExpanded((e) => !e)}
+          className="cursor-pointer self-start font-display text-[12px] text-gold transition-colors duration-200 hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold"
+        >
+          {expanded ? "Show fewer" : `Show all ${assets.images.length} images`}
+        </button>
+      )}
+    </div>
+  );
+}
+
 function ImageField({
   value,
   onChange,
   assets,
+  path,
 }: {
   value: string;
   onChange: (v: string) => void;
   assets: Assets;
+  path: Path;
 }) {
   const [drag, setDrag] = useState(false);
   const [busy, setBusy] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
-  const listId = useId();
+  const isData = value.startsWith("data:");
 
   const handleFile = async (file: File | undefined) => {
     if (!file || !file.type.startsWith("image/")) return;
@@ -104,78 +189,217 @@ function ImageField({
     try {
       onChange(await fileToDataUrl(file));
     } catch {
-      /* ignore unreadable files */
+      /* ignore */
     } finally {
       setBusy(false);
     }
   };
 
-  const isData = value.startsWith("data:");
+  return (
+    <FieldLabel path={path}>
+      <div className="flex flex-col gap-[12px]">
+        <div className="flex items-start gap-[14px]">
+          <div className="flex h-[96px] w-[96px] shrink-0 items-center justify-center overflow-hidden rounded-[10px] border border-ink/15 bg-paper">
+            {value ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={value} alt="" className="h-full w-full object-contain" />
+            ) : (
+              <span className="text-[11px] text-muted">No image</span>
+            )}
+          </div>
+          <div className="flex flex-1 flex-col gap-[8px]">
+            <div
+              onClick={() => inputRef.current?.click()}
+              onDragOver={(e) => {
+                e.preventDefault();
+                setDrag(true);
+              }}
+              onDragLeave={() => setDrag(false)}
+              onDrop={(e) => {
+                e.preventDefault();
+                setDrag(false);
+                handleFile(e.dataTransfer.files?.[0]);
+              }}
+              className={`flex min-h-[72px] cursor-pointer items-center justify-center rounded-[8px] border border-dashed px-[12px] py-[14px] text-center text-[13px] transition-colors duration-200 ${
+                drag
+                  ? "border-gold bg-gold/[0.08] text-ink"
+                  : "border-ink/25 text-muted hover:border-gold/60"
+              }`}
+            >
+              {busy ? "Processing…" : drag ? "Drop to upload" : "Drag an image here, or click to upload"}
+            </div>
+            <input
+              ref={inputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => handleFile(e.target.files?.[0])}
+            />
+            {!isData && (
+              <input
+                className={inputClass}
+                placeholder="/path.jpg or https://…"
+                value={value}
+                onChange={(e) => onChange(e.target.value)}
+              />
+            )}
+            {isData && (
+              <span className="text-[12px] text-muted">
+                Image uploaded.{" "}
+                <button
+                  type="button"
+                  onClick={() => onChange("")}
+                  className="cursor-pointer text-gold underline transition-colors hover:text-ink"
+                >
+                  Remove
+                </button>
+              </span>
+            )}
+          </div>
+        </div>
+        <ImageGridPicker assets={assets} value={isData ? "" : value} onSelect={onChange} />
+      </div>
+    </FieldLabel>
+  );
+}
+
+function MoneyInput({
+  path,
+  value,
+  onChange,
+}: {
+  path: Path;
+  value: number;
+  onChange: (path: Path, value: unknown) => void;
+}) {
+  const meta = getFieldMeta(path);
+  return (
+    <label className={labelClass}>
+      <span className="text-[13px] font-medium text-ink">{meta.label}</span>
+      {meta.help && (
+        <span className="text-[12px] leading-[1.45] text-ink-soft">{meta.help}</span>
+      )}
+      <div className="relative">
+        <span className="pointer-events-none absolute top-1/2 left-[12px] -translate-y-1/2 text-[14px] text-muted">
+          $
+        </span>
+        <input
+          type="number"
+          step="0.01"
+          min="0"
+          className={`${inputClass} pl-[28px]`}
+          value={(value / 100).toString()}
+          onChange={(e) => {
+            const n = Number(e.target.value);
+            onChange(path, Math.round((Number.isFinite(n) ? n : 0) * 100));
+          }}
+        />
+      </div>
+    </label>
+  );
+}
+
+function ScalarField({
+  value,
+  path,
+  onChange,
+  assets,
+}: {
+  value: unknown;
+  path: Path;
+  onChange: (path: Path, value: unknown) => void;
+  assets: Assets;
+}) {
+  const key = String(path[path.length - 1] ?? "");
+
+  if (typeof value === "boolean") {
+    const meta = getFieldMeta(path);
+    return (
+      <ToggleSwitch
+        checked={value}
+        onChange={(v) => onChange(path, v)}
+        label={meta.label}
+        help={meta.help}
+      />
+    );
+  }
+
+  if (typeof value === "number") {
+    if (key.endsWith("Cents")) {
+      return <MoneyInput path={path} value={value} onChange={onChange} />;
+    }
+    const meta = getFieldMeta(path);
+    return (
+      <label className={labelClass}>
+        <span className="text-[13px] font-medium text-ink">{meta.label}</span>
+        {meta.help && (
+          <span className="text-[12px] leading-[1.45] text-ink-soft">{meta.help}</span>
+        )}
+        <input
+          type="number"
+          step="1"
+          className={inputClass}
+          value={String(value)}
+          onChange={(e) => {
+            const n = Number(e.target.value);
+            onChange(path, Number.isFinite(n) ? n : 0);
+          }}
+        />
+      </label>
+    );
+  }
+
+  const str = String(value ?? "");
+
+  if (isImageKey(key)) {
+    return (
+      <ImageField
+        value={str}
+        onChange={(v) => onChange(path, v)}
+        assets={assets}
+        path={path}
+      />
+    );
+  }
+
+  const meta = getFieldMeta(path);
+  const isAsset = ASSET_KEY.test(key);
+  const listId = isAsset ? `assets-${pathKey(path)}` : undefined;
+  const long = str.length > 60 || str.includes("\n");
+  const idPlaceholder = key === "id" ? "e.g. 52-laws-of-you" : undefined;
 
   return (
-    <div className="flex items-start gap-[12px]">
-      <div className="flex h-[64px] w-[64px] shrink-0 items-center justify-center overflow-hidden rounded-[8px] border border-ink/15 bg-paper">
-        {value ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={value} alt="" className="h-full w-full object-contain" />
-        ) : (
-          <span className="text-[10px] text-muted">none</span>
-        )}
-      </div>
-      <div className="flex flex-1 flex-col gap-[6px]">
-        <div
-          onClick={() => inputRef.current?.click()}
-          onDragOver={(e) => {
-            e.preventDefault();
-            setDrag(true);
-          }}
-          onDragLeave={() => setDrag(false)}
-          onDrop={(e) => {
-            e.preventDefault();
-            setDrag(false);
-            handleFile(e.dataTransfer.files?.[0]);
-          }}
-          className={`flex cursor-pointer items-center justify-center rounded-[8px] border border-dashed px-[12px] py-[10px] text-center text-[12px] transition-colors ${
-            drag
-              ? "border-gold bg-gold/[0.08] text-ink"
-              : "border-ink/25 text-muted hover:border-gold/60"
-          }`}
-        >
-          {busy ? "Processing…" : drag ? "Drop to upload" : "Drag an image here, or click to upload"}
-        </div>
-        <input
-          ref={inputRef}
-          type="file"
-          accept="image/*"
-          className="hidden"
-          onChange={(e) => handleFile(e.target.files?.[0])}
+    <label className={labelClass}>
+      <span className="text-[13px] font-medium text-ink">{meta.label}</span>
+      {meta.help && (
+        <span className="text-[12px] leading-[1.45] text-ink-soft">{meta.help}</span>
+      )}
+      {long ? (
+        <textarea
+          rows={Math.min(8, Math.max(3, str.split("\n").length))}
+          className={`${inputClass} min-h-[80px] resize-y leading-[1.5]`}
+          value={str}
+          onChange={(e) => onChange(path, e.target.value)}
         />
-        <input
-          className={inputClass}
-          list={listId}
-          placeholder="/path.jpg or https://…"
-          value={isData ? "" : value}
-          onChange={(e) => onChange(e.target.value)}
-        />
-        <datalist id={listId}>
-          {assets.images.map((a) => (
-            <option key={a} value={a} />
-          ))}
-        </datalist>
-        {isData && (
-          <span className="text-[11px] text-muted">
-            Uploaded image embedded.{" "}
-            <button
-              type="button"
-              onClick={() => onChange("")}
-              className="text-gold underline"
-            >
-              clear
-            </button>
-          </span>
-        )}
-      </div>
-    </div>
+      ) : (
+        <>
+          <input
+            className={inputClass}
+            list={listId}
+            placeholder={idPlaceholder}
+            value={str}
+            onChange={(e) => onChange(path, e.target.value)}
+          />
+          {isAsset && listId && (
+            <datalist id={listId}>
+              {[...assets.images, ...assets.videos].map((a) => (
+                <option key={a} value={a} />
+              ))}
+            </datalist>
+          )}
+        </>
+      )}
+    </label>
   );
 }
 
@@ -185,12 +409,16 @@ export function FieldEditor({
   onChange,
   assets,
   label,
+  flat = false,
+  depth = 0,
 }: {
   value: unknown;
   path: Path;
   onChange: (path: Path, value: unknown) => void;
   assets: Assets;
   label?: string;
+  flat?: boolean;
+  depth?: number;
 }) {
   const key = String(path[path.length - 1] ?? "");
 
@@ -209,16 +437,20 @@ export function FieldEditor({
     const removeRow = (i: number) =>
       onChange(path, value.filter((_, j) => j !== i));
 
+    const arrayMeta = getFieldMeta(path);
+    const showArrayHeader = depth > 0 || !flat;
+
     return (
-      <fieldset className="m-0 flex flex-col gap-[10px] rounded-[8px] border border-ink/10 p-[14px]">
-        <legend className="px-[6px] font-display text-[12px] uppercase tracking-[0.12em] text-ink">
-          {label ?? humanize(key)}
-        </legend>
-        {key === "products" && (
-          <p className="m-0 text-[12px] leading-[1.5] text-muted">
-            Each product needs a unique Id. Mark one as Featured — it drives the hero,
-            footer, and newsletter.
-          </p>
+      <div className="flex flex-col gap-[12px]">
+        {showArrayHeader && (
+          <div className="flex flex-col gap-[4px]">
+            <span className="font-display text-[14px] font-medium text-ink">
+              {label ?? arrayMeta.label}
+            </span>
+            {arrayMeta.help && (
+              <span className="text-[12px] text-ink-soft">{arrayMeta.help}</span>
+            )}
+          </div>
         )}
         {value.map((item, i) => {
           const rowLabel =
@@ -228,26 +460,38 @@ export function FieldEditor({
             "title" in item
               ? String((item as { title?: string; id?: string }).title || "") ||
                 String((item as { id?: string }).id || "") ||
-                `#${i + 1}`
-              : `#${i + 1}`;
+                `Item ${i + 1}`
+              : `${arrayMeta.label || humanize(key)} ${i + 1}`;
           return (
-          <div key={i} className="flex items-start gap-[8px]">
-            <div className="flex-1">
+            <div
+              key={i}
+              className="rounded-[10px] border border-ink/10 bg-panel/30 p-[14px]"
+            >
+              <div className="mb-[12px] flex items-center justify-between gap-[8px]">
+                <span className="font-display text-[13px] font-medium text-ink">{rowLabel}</span>
+                <button
+                  type="button"
+                  onClick={() => removeRow(i)}
+                  className="cursor-pointer rounded-[6px] border border-ink/15 px-[10px] py-[5px] text-[12px] text-muted transition-colors duration-200 hover:bg-ink/[0.05] hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-gold"
+                >
+                  Remove
+                </button>
+              </div>
               {itemsAreObjects ? (
-                <div className="rounded-[8px] bg-paper/60 p-[10px]">
-                  <FieldEditor
-                    value={item}
-                    path={[...path, i]}
-                    onChange={onChange}
-                    assets={assets}
-                    label={rowLabel}
-                  />
-                </div>
+                <FieldEditor
+                  value={item}
+                  path={[...path, i]}
+                  onChange={onChange}
+                  assets={assets}
+                  flat
+                  depth={depth + 1}
+                />
               ) : isImageKey(key) ? (
                 <ImageField
                   value={String(item ?? "")}
                   onChange={(v) => onChange([...path, i], v)}
                   assets={assets}
+                  path={[...path, i]}
                 />
               ) : (
                 <input
@@ -257,133 +501,63 @@ export function FieldEditor({
                 />
               )}
             </div>
-            <button
-              type="button"
-              onClick={() => removeRow(i)}
-              className="mt-[2px] shrink-0 rounded-[6px] border border-ink/15 px-[9px] py-[7px] text-[12px] text-muted transition-colors hover:bg-ink/[0.05]"
-            >
-              Remove
-            </button>
-          </div>
-        );
+          );
         })}
         <button
           type="button"
           onClick={addRow}
-          className="self-start rounded-full border border-gold/40 px-[14px] py-[6px] font-display text-[12px] text-gold transition-colors hover:bg-gold/[0.08]"
+          className="cursor-pointer self-start rounded-full border border-gold/40 px-[16px] py-[8px] font-display text-[13px] text-gold transition-colors duration-200 hover:bg-gold/[0.08] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold"
         >
-          {key === "products" ? "+ Add product" : "+ Add"}
+          {getAddLabel(path)}
         </button>
-      </fieldset>
+      </div>
     );
   }
 
   // ── Objects ───────────────────────────────────────────────
   if (value && typeof value === "object") {
+    const entries = Object.entries(value as Record<string, unknown>);
+    const objMeta = getFieldMeta(path);
+    const showObjHeader = depth > 0 && label;
+
     return (
-      <fieldset className="m-0 flex flex-col gap-[12px] rounded-[8px] border border-ink/10 p-[clamp(12px,2vw,18px)]">
-        <legend className="px-[6px] font-display text-[12px] uppercase tracking-[0.16em] text-ink">
-          {label ?? humanize(key)}
-        </legend>
-        {Object.entries(value as Record<string, unknown>).map(([k, v]) => (
+      <div className="flex flex-col gap-[16px]">
+        {showObjHeader && (
+          <div className="border-b border-ink/10 pb-[8px]">
+            <span className="font-display text-[13px] font-medium text-ink">
+              {label ?? objMeta.label}
+            </span>
+          </div>
+        )}
+        {entries.map(([k, v], idx) => (
           <Fragment key={k}>
-            <FieldEditor value={v} path={[...path, k]} onChange={onChange} assets={assets} />
+            {idx > 0 && depth === 0 && flat && <hr className="border-ink/10" />}
+            {v !== null && typeof v === "object" && !Array.isArray(v) ? (
+              <FieldEditor
+                value={v}
+                path={[...path, k]}
+                onChange={onChange}
+                assets={assets}
+                label={getFieldMeta([...path, k]).label}
+                flat
+                depth={depth + 1}
+              />
+            ) : (
+              <ScalarField
+                value={v}
+                path={[...path, k]}
+                onChange={onChange}
+                assets={assets}
+              />
+            )}
           </Fragment>
         ))}
-      </fieldset>
+      </div>
     );
   }
 
-  // ── Scalars ───────────────────────────────────────────────
-  if (typeof value === "boolean") {
-    return (
-      <label className="flex flex-col gap-[4px] text-[13px] text-ink-soft">
-        <span className="flex items-center gap-[8px]">
-          <input
-            type="checkbox"
-            checked={value}
-            onChange={(e) => onChange(path, e.target.checked)}
-          />
-          {humanize(key)}
-        </span>
-        {key === "featured" && (
-          <span className="pl-[22px] text-[11px] text-muted">
-            Only one product can be featured. Checking this unchecks the others.
-          </span>
-        )}
-      </label>
-    );
-  }
-
-  if (typeof value === "number") {
-    const isMoney = key.endsWith("Cents");
-    return (
-      <label className={labelClass}>
-        {humanize(key)}
-        <input
-          type="number"
-          step={isMoney ? "0.01" : "1"}
-          className={inputClass}
-          value={isMoney ? (value / 100).toString() : String(value)}
-          onChange={(e) => {
-            const n = Number(e.target.value);
-            onChange(path, isMoney ? Math.round((Number.isFinite(n) ? n : 0) * 100) : n);
-          }}
-        />
-      </label>
-    );
-  }
-
-  // string
-  const str = String(value ?? "");
-
-  // Image fields get the preview + drag-and-drop uploader.
-  if (isImageKey(key)) {
-    return (
-      <label className={labelClass}>
-        {humanize(key)}
-        <ImageField value={str} onChange={(v) => onChange(path, v)} assets={assets} />
-      </label>
-    );
-  }
-
-  const isAsset = ASSET_KEY.test(key);
-  const listId = isAsset ? `assets-${path.join("-")}` : undefined;
-  const long = str.length > 60 || str.includes("\n");
-  const idPlaceholder = key === "id" ? "e.g. 52-laws-of-you" : undefined;
+  // ── Scalar at root ────────────────────────────────────────
   return (
-    <label className={labelClass}>
-      {humanize(key)}
-      {key === "id" && (
-        <span className="text-[11px] text-muted">
-          Unique slug — used in cart and orders. No spaces.
-        </span>
-      )}
-      {long ? (
-        <textarea
-          rows={Math.min(8, Math.max(2, str.split("\n").length))}
-          className={`${inputClass} resize-y`}
-          value={str}
-          onChange={(e) => onChange(path, e.target.value)}
-        />
-      ) : (
-        <>
-          <input
-            className={inputClass}
-            list={listId}
-            placeholder={idPlaceholder}
-            value={str}
-            onChange={(e) => onChange(path, e.target.value)}
-          />
-          {isAsset && (
-            <datalist id={listId}>
-              {[...assets.images, ...assets.videos].map((a) => (
-                <option key={a} value={a} />
-              ))}
-            </datalist>
-          )}
-        </>
-      )}
-    </label>
+    <ScalarField value={value} path={path} onChange={onChange} assets={assets} />
   );
 }
