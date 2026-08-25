@@ -53,6 +53,13 @@ node --env-file=.env.local scripts/db-init.mjs
 npm run dev      # http://localhost:3000
 ```
 
+> **Mac note:** If you see `Turbopack is not supported on this platform` or
+> `@next/swc-darwin-arm64 was not installed`, the dev script already uses
+> Webpack (`next dev --webpack`). Run `npm install` from this project folder
+> (not the parent `Code_Projects` directory). If port 3000 is busy, stop the
+> other process or use the port Next.js prints (e.g. 3001) and set
+> `NEXT_PUBLIC_SITE_URL` to match.
+
 ---
 
 ## 2. The admin CRM
