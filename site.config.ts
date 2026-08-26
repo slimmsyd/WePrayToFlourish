@@ -39,6 +39,14 @@ export type ProductContent = {
   shortDescription: string;
   longDescription: string[];
   tags: string[];
+  /** Where the buy button sends people. */
+  purchaseType: "stripe" | "external";
+  /** External checkout URL (Amazon, Gumroad). Used when purchaseType = "external". */
+  externalUrl: string;
+  /** Label for the external button, e.g. "Buy on Amazon". */
+  externalCtaLabel: string;
+  /** Digital delivery: download URL sent in the receipt email. Empty = physical. */
+  digitalFileUrl: string;
 };
 
 /** Blank row shape for the admin "+ Add product" button (not a live catalog entry). */
@@ -57,6 +65,10 @@ export const PRODUCT_TEMPLATE: ProductContent = {
   shortDescription: "",
   longDescription: [""],
   tags: [""],
+  purchaseType: "stripe",
+  externalUrl: "",
+  externalCtaLabel: "Buy on Amazon",
+  digitalFileUrl: "",
 };
 
 export type SiteConfig = {
@@ -236,6 +248,10 @@ export const site: SiteConfig = {
         "Drawn from faith, observation, and the wisdom of community, it asks one question on every page: who are you becoming when no one is watching?",
       ],
       tags: ["#observe", "#restrain", "#flourish"],
+      purchaseType: "stripe",
+      externalUrl: "",
+      externalCtaLabel: "Buy on Amazon",
+      digitalFileUrl: "",
     },
   ],
 

@@ -79,6 +79,10 @@ export const LABELS: Record<string, FieldMeta> = {
   "products.shortDescription": { label: "Short description" },
   "products.longDescription": { label: "Full description paragraphs" },
   "products.tags": { label: "Tags" },
+  "products.purchaseType": { label: "How it's sold" },
+  "products.externalUrl": { label: "Store link", help: "Full URL to the product on Amazon, Gumroad, etc." },
+  "products.externalCtaLabel": { label: "Button text", help: "e.g. Buy on Amazon" },
+  "products.digitalFileUrl": { label: "Download link", help: "URL to the digital file. Sent in the receipt email after purchase. Leave empty for physical products." },
 
   // Brand
   "brand.siteName": { label: "Site name" },

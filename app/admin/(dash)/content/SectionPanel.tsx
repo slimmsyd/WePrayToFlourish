@@ -1,8 +1,9 @@
 "use client";
 
-import type { SiteContent } from "@/lib/content";
+import type { SiteContent, ProductContent } from "@/lib/content";
 import { getAt, type EditorSection, type Path } from "./editor-schema";
 import { FieldEditor, type Assets } from "./FieldEditor";
+import ProductsPanel from "./ProductsPanel";
 
 export default function SectionPanel({
   section,
@@ -42,28 +43,37 @@ export default function SectionPanel({
       {section.id === "products" && (
         <div className="mb-[16px] rounded-[8px] border border-gold/25 bg-gold/[0.06] px-[14px] py-[12px] text-[13px] leading-[1.55] text-ink-soft">
           <strong className="font-medium text-ink">Adding another book?</strong> Use{" "}
-          <span className="font-medium text-ink">+ Add another book</span> below, give it a
-          unique ID (e.g. <code className="text-[12px]">second-book</code>), and mark only one
-          product as featured. Shipping settings are under{" "}
-          <span className="font-medium text-ink">Pricing &amp; shipping</span>.
+          <span className="font-medium text-ink">+ Add a product</span> below, give it a
+          unique ID (e.g. <code className="text-[12px]">second-book</code>), choose how
+          it&apos;s sold, and mark only one product as featured. Shipping settings are
+          under <span className="font-medium text-ink">Pricing &amp; shipping</span>.
         </div>
       )}
 
       <div className="flex flex-col gap-[20px]">
-        {section.paths.map((p) => {
-          const value = getAt(draft, p);
-          if (value === undefined) return null;
-          return (
-            <FieldEditor
-              key={p.join(".")}
-              value={value}
-              path={p}
-              onChange={onChange}
-              assets={assets}
-              flat
-            />
-          );
-        })}
+        {section.id === "products" ? (
+          <ProductsPanel
+            products={(getAt(draft, ["products"]) as ProductContent[]) ?? []}
+            path={["products"]}
+            onChange={onChange}
+            assets={assets}
+          />
+        ) : (
+          section.paths.map((p) => {
+            const value = getAt(draft, p);
+            if (value === undefined) return null;
+            return (
+              <FieldEditor
+                key={p.join(".")}
+                value={value}
+                path={p}
+                onChange={onChange}
+                assets={assets}
+                flat
+              />
+            );
+          })
+        )}
       </div>
     </div>
   );

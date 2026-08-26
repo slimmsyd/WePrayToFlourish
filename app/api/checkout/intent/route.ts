@@ -32,6 +32,17 @@ function resolveLines(body: Body, featuredId: string): CartLine[] {
   return [{ productId: featuredId, qty: body.qty ?? 1 }];
 }
 
+/** External products (Amazon, etc.) are never charged through Stripe. */
+function filterPurchasable(
+  lines: CartLine[],
+  products: { id: string; purchaseType?: string }[],
+): CartLine[] {
+  const external = new Set(
+    products.filter((p) => p.purchaseType === "external").map((p) => p.id),
+  );
+  return lines.filter((l) => !external.has(l.productId));
+}
+
 /**
  * Create or update the PaymentIntent for the order.
  *
@@ -52,7 +63,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "No products configured" }, { status: 400 });
   }
   const featured = await getFeaturedProduct();
-  const lines = resolveLines(body, featured!.id);
+  const rawLines = resolveLines(body, featured!.id);
+  const lines = filterPurchasable(rawLines, site.products);
   const breakdown = priceForCart(lines, site.products, site.commerce);
 
   if (breakdown.lines.length === 0 || breakdown.amountInCents < 1) {

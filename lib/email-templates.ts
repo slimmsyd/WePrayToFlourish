@@ -151,6 +151,8 @@ export function orderConfirmationEmail(opts: {
   city?: string | null;
   postalCode?: string | null;
   country?: string | null;
+  /** Download links for digital products in this order. */
+  digitalDownloads?: { title: string; url: string }[];
 }) {
   const shipping = formatShippingBlock({
     name: opts.customerName,
@@ -160,12 +162,38 @@ export function orderConfirmationEmail(opts: {
     country: opts.country,
   });
 
+  const downloads = opts.digitalDownloads?.filter((d) => d.url) ?? [];
+  const downloadsHtml =
+    downloads.length > 0
+      ? `
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 20px;border:1px solid rgba(156,123,77,0.3);border-radius:8px;padding:16px;">
+      <tr><td>
+        <p style="margin:0 0 10px;font-size:12px;letter-spacing:0.22em;text-transform:uppercase;color:#9c7b4d;">Your download${downloads.length > 1 ? "s" : ""}</p>
+        ${downloads
+          .map(
+            (d) =>
+              `<p style="margin:0 0 8px;"><a href="${escapeHtml(d.url)}" style="color:#9c7b4d;text-decoration:underline;font-size:15px;">${escapeHtml(d.title)}</a></p>`,
+          )
+          .join("")}
+      </td></tr>
+    </table>`
+      : "";
+  const downloadsText =
+    downloads.length > 0
+      ? [
+          "",
+          `Your download${downloads.length > 1 ? "s" : ""}:`,
+          ...downloads.map((d) => `${d.title}: ${d.url}`),
+        ]
+      : [];
+
   const body = `
     <p style="margin:0 0 10px;font-size:12px;letter-spacing:0.22em;text-transform:uppercase;color:#9c7b4d;">Order confirmed</p>
     <p style="margin:0 0 18px;font-size:24px;line-height:1.2;color:#1a1714;">${escapeHtml(opts.headline)}</p>
     <p style="margin:0 0 8px;font-size:15px;color:#4a443c;">Hi ${escapeHtml(opts.customerName)},</p>
     ${paragraphsHtml(opts.body)}
     ${orderProductsHtml(opts.lineItems)}
+    ${downloadsHtml}
     ${orderTotalsHtml(opts)}
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 20px;border-top:1px solid rgba(26,23,20,0.1);">
       ${detailRow("Order", `#${opts.orderId}`)}
@@ -196,6 +224,7 @@ export function orderConfirmationEmail(opts: {
       opts.body,
       "",
       orderProductsText(opts.lineItems),
+      ...downloadsText,
       "",
       orderTotalsText(opts),
       "",

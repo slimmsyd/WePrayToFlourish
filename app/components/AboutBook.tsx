@@ -62,7 +62,21 @@ function ProductSection({
         ))}
       </div>
 
-      <AddToCartButton productId={product.id} label={ctaLabel} />
+      {product.purchaseType === "external" && product.externalUrl ? (
+        <a
+          href={product.externalUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-[26px] inline-flex cursor-pointer items-center justify-center gap-[6px] rounded-full bg-[#6a6056] px-[40px] py-[13px] text-[13px] font-medium tracking-[0.04em] text-paper transition-colors hover:bg-ink-soft"
+        >
+          {product.externalCtaLabel || "Buy now"}
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14L21 3" />
+          </svg>
+        </a>
+      ) : (
+        <AddToCartButton productId={product.id} label={ctaLabel} />
+      )}
 
       <div className="mt-[22px] flex flex-wrap gap-x-[16px] gap-y-[6px] text-[11px] text-ink/40">
         {product.tags.map((tag) => (

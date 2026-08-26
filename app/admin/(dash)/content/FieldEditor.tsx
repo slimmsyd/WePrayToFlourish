@@ -411,6 +411,7 @@ export function FieldEditor({
   label,
   flat = false,
   depth = 0,
+  hideKeys,
 }: {
   value: unknown;
   path: Path;
@@ -419,6 +420,7 @@ export function FieldEditor({
   label?: string;
   flat?: boolean;
   depth?: number;
+  hideKeys?: string[];
 }) {
   const key = String(path[path.length - 1] ?? "");
 
@@ -516,7 +518,9 @@ export function FieldEditor({
 
   // ── Objects ───────────────────────────────────────────────
   if (value && typeof value === "object") {
-    const entries = Object.entries(value as Record<string, unknown>);
+    const entries = Object.entries(value as Record<string, unknown>).filter(
+      ([k]) => !hideKeys?.includes(k),
+    );
     const objMeta = getFieldMeta(path);
     const showObjHeader = depth > 0 && label;
 

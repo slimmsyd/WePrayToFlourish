@@ -86,6 +86,15 @@ export async function sendOrderEmails(order: OrderRow): Promise<SendResult> {
           },
         ];
 
+  // Collect download links for any digital products in this order.
+  const digitalDownloads = siteContent.products
+    .filter(
+      (p) =>
+        p.digitalFileUrl &&
+        dbItems.some((item) => item.product_id === p.id),
+    )
+    .map((p) => ({ title: p.title, url: p.digitalFileUrl }));
+
   const customerTpl = orderConfirmationEmail({
     siteName: siteContent.brand.siteName,
     siteUrl,
@@ -103,6 +112,7 @@ export async function sendOrderEmails(order: OrderRow): Promise<SendResult> {
     city: order.city,
     postalCode: order.postal_code,
     country: order.country,
+    digitalDownloads,
     ...emailCopy.customer,
   });
 

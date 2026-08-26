@@ -100,6 +100,10 @@ function normalizeSiteContent(
         ? fields.longDescription.map(String)
         : [],
       tags: Array.isArray(fields.tags) ? fields.tags.map(String) : [],
+      purchaseType: "stripe",
+      externalUrl: "",
+      externalCtaLabel: "Buy on Amazon",
+      digitalFileUrl: "",
     };
     next = { ...next, commerce, products: [product] };
   }
@@ -118,6 +122,11 @@ function normalizeSiteContent(
   const products = next.products.map((p, i) => ({
     ...p,
     id: p.id?.trim() || `product-${i + 1}`,
+    // Backfill fields added after the first products were stored.
+    purchaseType: (p.purchaseType === "external" ? "external" : "stripe") as "stripe" | "external",
+    externalUrl: p.externalUrl ?? "",
+    externalCtaLabel: p.externalCtaLabel ?? "Buy on Amazon",
+    digitalFileUrl: p.digitalFileUrl ?? "",
   }));
   const featuredIdx = products.findIndex((p) => p.featured);
   const normalizedProducts = products.map((p, i) => ({
